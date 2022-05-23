@@ -18,6 +18,8 @@ abstract contract Storage is Ownable, AccessControl {
     uint256 public numListings; //Number of listings in the marketplace
     mapping(address => bool) internal _isPaymentToken; //Whether a given ERC20 contract is an excepted payment token
 
+    mapping(address => mapping(uint256 => address[])) internal _tokenListers; //Map of token addresses to the addresses of the sellers that have listed that token
+
     mapping(address => mapping(address => mapping(uint256 => IMultiplace.Royalty)))
         internal _royalties; //Royalties of each lister.tokenAddr.tokenId pair
     mapping(address => mapping(address => mapping(uint256 => bool)))
