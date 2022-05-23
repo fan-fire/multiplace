@@ -34,10 +34,10 @@ interface IMultiplace is IERC165 {
     );
     event Listed(
         uint256 listPtr,
-        address indexed tokenAddr,
+        address indexed nftAddress,
         uint256 indexed tokenId,
         address indexed seller,
-        uint256 unitPrice,
+        uint256 price,
         address paymentToken,
         NFTType nftType,
         address royaltyReceiver,
@@ -45,10 +45,10 @@ interface IMultiplace is IERC165 {
     );
     event Bought(
         uint256 listPtr,
-        address indexed tokenAddr,
+        address indexed nftAddress,
         uint256 indexed tokenId,
         address indexed buyer,
-        uint256 unitPrice,
+        uint256 price,
         address paymentToken,
         NFTType nftType,
         address royaltyReceiver,
@@ -63,28 +63,28 @@ interface IMultiplace is IERC165 {
         uint256 amount
     );
     event RoyaltiesSet(
-        address indexed tokenAddr,
+        address indexed nftAddress,
         uint256 indexed tokenId,
         address indexed royaltyReceiver,
         uint256 royaltyAmount
     );
-    event Unlisted(address indexed tokenAddr, uint256 indexed tokenId);
+    event Unlisted(address indexed nftAddress, uint256 indexed tokenId);
 
     event Reserved(
-        address indexed tokenAddr,
+        address indexed nftAddress,
         uint256 indexed tokenId,
         address indexed reservedFor,
         uint256 period,
         uint256 reservedUntil
     );
 
-    event UnlistStale(address indexed tokenAddr, uint256 indexed tokenId);
+    event UnlistStale(address indexed nftAddress, uint256 indexed tokenId);
 
     function list(
-        address tokenAddr,
+        address nftAddress,
         uint256 tokenId,
         uint256 amount,
-        uint256 unitPrice,
+        uint256 price,
         address paymentToken
     ) external;
 
@@ -107,7 +107,7 @@ interface IMultiplace is IERC165 {
     ) external;
 
     function reserve(
-        address tokenAddr,
+        address nftAddress,
         uint256 tokenId,
         uint256 period,
         address reservee
@@ -119,7 +119,7 @@ interface IMultiplace is IERC165 {
         uint256 tokenId
     ) external view returns (address reservedFor, uint256 reservedUntil);
 
-    function unlist(address tokenAddr, uint256 tokenId) external;
+    function unlist(address nftAddress, uint256 tokenId) external;
 
     function getListingPointer(
         address seller,
@@ -142,7 +142,7 @@ interface IMultiplace is IERC165 {
         uint256 tokenId
     ) external view returns (bool hasBeenListed);
 
-    function isPaymentToken(address tokenAddress)
+    function isPaymentToken(address nftAddressess)
         external
         view
         returns (bool isApproved);
