@@ -22,11 +22,19 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         uint256 a = 4;
     }
 
-    function buy(address tokenAddr, uint256 tokenId) external override {
+    function buy(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external override {
         uint256 a = 4;
     }
 
-    function status(address tokenAddr, uint256 tokenId)
+    function status(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    )
         external
         view
         override
@@ -35,7 +43,11 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         uint256 a = 4;
     }
 
-    function unlistStale(address tokenAddr, uint256 tokenId) external override {
+    function unlistStale(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external override {
         uint256 a = 4;
     }
 
@@ -48,7 +60,11 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         uint256 a = 4;
     }
 
-    function getReservedState(address tokenAddr, uint256 tokenId)
+    function getReservedState(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    )
         external
         view
         override
@@ -61,12 +77,11 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         uint256 a = 4;
     }
 
-    function getListingPointer(address tokenAddr, uint256 tokenId)
-        external
-        view
-        override
-        returns (uint256 listPtr)
-    {
+    function getListingPointer(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external view override returns (uint256 listPtr) {
         uint256 a = 4;
     }
 
@@ -85,12 +100,11 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         uint256 a = 4;
     }
 
-    function isListed(address tokenAddr, uint256 tokenId)
-        external
-        view
-        override
-        returns (bool hasBeenListed)
-    {
+    function isListed(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external view override returns (bool hasBeenListed) {
         uint256 a = 4;
     }
 
@@ -112,6 +126,15 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         uint256 a = 4;
     }
 
+    function getSeller(address tokenAddr, uint256 tokenId)
+        external
+        view
+        override
+        returns (address seller)
+    {
+        uint256 a = 4;
+    }
+
     function getListingByPointer(uint256 listPtr)
         external
         view
@@ -121,12 +144,11 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         uint256 a = 4;
     }
 
-    function getListing(address tokenAddr, uint256 tokenId)
-        external
-        view
-        override
-        returns (Listing memory listing)
-    {
+    function getListing(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external view override returns (Listing memory listing) {
         uint256 a = 4;
     }
 
@@ -139,16 +161,16 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         uint256 a = 4;
     }
 
-    function getRoyalties(address tokenAddr, uint256 tokenId)
-        external
-        view
-        override
-        returns (Royalty memory royalty)
-    {
+    function getRoyalties(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external view override returns (Royalty memory royalty) {
         uint256 a = 4;
     }
 
     function updateRoyaltyAmount(
+        address seller,
         address tokenAddr,
         uint256 tokenId,
         uint256 amount

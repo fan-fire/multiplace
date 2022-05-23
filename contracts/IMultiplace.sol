@@ -88,14 +88,23 @@ interface IMultiplace is IERC165 {
         address paymentToken
     ) external;
 
-    function buy(address nftAddress, uint256 tokenId) external;
+    function buy(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external;
 
-    function status(address nftAddress, uint256 tokenId)
-        external
-        view
-        returns (bool isSellerOwner, bool isTokenStillApproved);
+    function status(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external view returns (bool isSellerOwner, bool isTokenStillApproved);
 
-    function unlistStale(address nftAddress, uint256 tokenId) external;
+    function unlistStale(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external;
 
     function reserve(
         address nftAddress,
@@ -104,17 +113,19 @@ interface IMultiplace is IERC165 {
         address reservee
     ) external;
 
-    function getReservedState(address nftAddress, uint256 tokenId)
-        external
-        view
-        returns (address reservedFor, uint256 reservedUntil);
+    function getReservedState(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external view returns (address reservedFor, uint256 reservedUntil);
 
     function unlist(address nftAddress, uint256 tokenId) external;
 
-    function getListingPointer(address nftAddress, uint256 tokenId)
-        external
-        view
-        returns (uint256 listPtr);
+    function getListingPointer(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external view returns (uint256 listPtr);
 
     function addPaymentToken(address paymentToken) external;
 
@@ -125,10 +136,11 @@ interface IMultiplace is IERC165 {
         uint256 newProtocolFeeDenominator
     ) external;
 
-    function isListed(address nftAddress, uint256 tokenId)
-        external
-        view
-        returns (bool hasBeenListed);
+    function isListed(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external view returns (bool hasBeenListed);
 
     function isPaymentToken(address nftAddressess)
         external
@@ -140,25 +152,33 @@ interface IMultiplace is IERC165 {
         view
         returns (uint256 balance);
 
+    function getSeller(address tokenAddr, uint256 tokenId)
+        external
+        view
+        returns (address seller);
+
     function getListingByPointer(uint256 listPtr)
         external
         view
         returns (Listing memory listing);
 
-    function getListing(address nftAddress, uint256 tokenId)
-        external
-        view
-        returns (Listing memory listing);
+    function getListing(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external view returns (Listing memory listing);
 
     function getAllListings() external view returns (Listing[] memory listings);
 
-    function getRoyalties(address nftAddress, uint256 tokenId)
-        external
-        view
-        returns (Royalty memory royalty);
+    function getRoyalties(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external view returns (Royalty memory royalty);
 
     function updateRoyaltyAmount(
-        address nftAddress,
+        address seller,
+        address tokenAddr,
         uint256 tokenId,
         uint256 amount
     ) external;
