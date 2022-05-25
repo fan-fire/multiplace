@@ -12,9 +12,6 @@ abstract contract Storage is Ownable, AccessControl {
     bytes32 public constant RESERVER_ROLE = keccak256("RESERVER_ROLE");
     uint256 public constant MAX_RESERVE_PERIOD = 24 * 60 * 60; /// can only reserve for a max of 1 day
 
-    using Strings for address;
-    using ERC165Checker for address;
-
     uint256 public numListings; //Number of listings in the marketplace
     mapping(address => bool) internal _isPaymentToken; //Whether a given ERC20 contract is an excepted payment token
 
