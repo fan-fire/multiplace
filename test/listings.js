@@ -467,6 +467,23 @@ describe("Listing", async () => {
   /                                                          /
   /======================================================== */
 
+  it("Can't list if amount is 0", async () => {
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 1;
+    let amount = 0;
+    let unitPrice = 10;
+    let paymentToken = erc20Mock.address;
+
+    await erc721Mock
+      .connect(lister)
+      .setApprovalForAll(multiplace.address, true);
+
+    await expect(
+      multiplace
+        .connect(lister)
+        .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
+    ).to.be.revertedWith("Invalid amount");
+  });
   it("Can list ERC1155 with ERC2981", async () => {
     let tokenAddr = erc1155With2981Mock.address;
     let tokenId = 1;
