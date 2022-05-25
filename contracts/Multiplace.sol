@@ -24,7 +24,7 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         address paymentToken
     ) external override whenNotPaused {
         // check passed variable values
-        require(amount > 0, "Amount must be greater than 0");
+        require(amount > 0, "Invalid amount");
         require(unitPrice > 0, "Invalid price");
         require(isPaymentToken(paymentToken), "Invalid payment token");
 
@@ -195,8 +195,6 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         Listing memory listing = getListing(msg.sender, tokenAddr, tokenId);
         // check reserving
         require(block.timestamp >= listing.reservedUntil, "NFT reserved");
-
-        require(listing.seller == msg.sender, "Only seller of NFT can unlist");
         assert(_unlist(listing));
     }
 
