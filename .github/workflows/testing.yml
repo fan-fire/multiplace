@@ -29,14 +29,6 @@ jobs:
       - name: Run Hardhat Tests
         id: testing
         run: bash .github/scripts/testing.sh
-      - name: Monitor coverage
-        uses: slavcodev/coverage-monitor-action@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          coverage_path: "coverage/clover.xml"
-          threshold_alert: 10
-          threshold_warning: 50
-          threshold_metric: "lines"
       - name: Read test_output.log
         id: test_output
         uses: juliangruber/read-file-action@v1
@@ -57,3 +49,12 @@ jobs:
               repo: context.repo.repo,
               body: OUTPUT_TESTS
             })
+      - name: Monitor coverage
+        uses: slavcodev/coverage-monitor-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          coverage_path: "coverage/clover.xml"
+          threshold_alert: 10
+          threshold_warning: 50
+          threshold_metric: "lines"
+          comment_mode: "insert"
