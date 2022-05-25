@@ -7,16 +7,14 @@ import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract ERC1155WithoutOwnerMock is ERC1155 {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
-
     constructor() ERC1155("") {}
 
-    function mint(address to) public returns (uint256) {
-        _tokenIds.increment();
-        uint256 newItemId = _tokenIds.current();
-        _mint(to, newItemId, 1, "");
-        return newItemId;
+    function mint(
+        address to,
+        uint256 tokenId,
+        uint256 amount
+    ) public {
+        _mint(to, tokenId, amount, "");
     }
 }
 
@@ -35,7 +33,7 @@ contract ERC1155Mock is ERC1155, Ownable {
 contract ERC1155WithERC2981Mock is ERC1155, IERC2981, Ownable {
     address private _recipient;
 
-    constructor() public ERC1155("TOKEN") {
+    constructor() public ERC1155("") {
         _recipient = owner();
     }
 

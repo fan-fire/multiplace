@@ -10,18 +10,17 @@ const listingToObject = (listing) => {
     nftType: listing.nftType,
     reservedUntil: listing.reservedUntil.toNumber(),
     reservedFor: listing.reservedFor,
-  }
-}
+  };
+};
 
 const NFT_TYPE = {
-    ERC721: 0,
-    ERC721_2981: 1,
-    ERC1155: 2,
-    ERC1155_2981: 3,
-  };
+  ERC721: 0,
+  ERC721_2981: 1,
+  ERC1155: 2,
+  ERC1155_2981: 3,
+};
 
 module.exports = {
   NFT_TYPE,
-  listingToObject
+  listingToObject,
 };
-

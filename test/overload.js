@@ -12,14 +12,14 @@ describe("Overload", () => {
     let b = await overload.b();
     expect(a).to.equal(0);
     expect(b).to.equal(0);
-    
+
     await overload["buy(uint256)"](2);
     a = await overload.a();
     b = await overload.b();
     expect(a).to.equal(2);
     expect(b).to.equal(0);
-    
-    await overload["buy(uint256,uint256)"](3,4);
+
+    await overload["buy(uint256,uint256)"](3, 4);
     a = await overload.a();
     b = await overload.b();
 
