@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.4;
-
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/interfaces/IERC721.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/interfaces/IERC1155.sol";
@@ -23,21 +23,22 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         uint256 unitPrice,
         address paymentToken
     ) external override whenNotPaused {
-        // check that the NFT not listed already
+        // check passed variable values
+        require(amount > 0, "Amount must be greater than 0");
+        require(unitPrice > 0, "Invalid price");
+        require(isPaymentToken(paymentToken), "Invalid payment token");
+
+        // check that the NFT not listed already by sender
         require(
             !isListed(msg.sender, tokenAddr, tokenId),
             "NFT already listed by sender"
         );
-
         // update _isListed first to avoid reentrancy
         _isListed[msg.sender][tokenAddr][tokenId] = true;
 
         // check that we've got a valid 721 or 1155, either with, or without 2981
         NFT_TYPE _nftType = nftType(tokenAddr);
         require(_nftType != NFT_TYPE.UNKNOWN, "NFT type unknown");
-
-        // check if payment token is in isPaymentToken
-        require(isPaymentToken(paymentToken), "Invalid payment token");
 
         // check if sender owns NFT-tokenId
         // check that marketplace is allowed to transfer NFT-tokenId
@@ -62,9 +63,6 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
                 "Marketplace not approved for ERC721"
             );
         }
-
-        // check price > 0
-        require(unitPrice > 0, "Invalid price");
 
         // get numListings for listPtr
         uint256 listPtr = numListings;
@@ -130,6 +128,7 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
             tokenId,
             msg.sender,
             unitPrice,
+            amount,
             paymentToken,
             _nftType,
             royalty.receiver,
@@ -188,8 +187,41 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         uint256 a = 4;
     }
 
-    function unlist(address tokenAddr, uint256 tokenId) external override {
-        uint256 a = 4;
+    function unlist(address tokenAddr, uint256 tokenId)
+        public
+        override
+        whenNotPaused
+    {
+        Listing memory listing = getListing(msg.sender, tokenAddr, tokenId);
+        // check reserving
+        require(block.timestamp >= listing.reservedUntil, "NFT reserved");
+
+        require(listing.seller == msg.sender, "Only seller of NFT can unlist");
+        assert(_unlist(listing));
+    }
+
+    function _unlist(Listing memory listingToRemove) private returns (bool) {
+        uint256 listPtrToRemove = listingToRemove.listPtr;
+        // pop from _listings,
+        Listing memory lastListing = _listings[_listings.length - 1];
+        lastListing.listPtr = listPtrToRemove;
+        _listings[listPtrToRemove] = lastListing;
+        _listings.pop();
+
+        // update _token2Ptr
+        _token2Ptr[lastListing.seller][lastListing.tokenAddr][
+            lastListing.tokenId
+        ] = listPtrToRemove;
+
+        // decrease numListings
+        numListings = numListings - 1;
+        // !don't remove from royatlies
+        _isListed[listingToRemove.seller][listingToRemove.tokenAddr][
+            listingToRemove.tokenId
+        ] = false;
+        assert(numListings >= 0);
+        emit Unlisted(lastListing.tokenAddr, lastListing.tokenId);
+        return true;
     }
 
     function getListingPointer(
@@ -299,8 +331,12 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external view override returns (Listing memory listing) {
-        uint256 a = 4;
+    ) public view override returns (Listing memory listing) {
+        require(
+            _isListed[seller][tokenAddr][tokenId],
+            "NFT not listed for sender"
+        );
+        return _listings[_token2Ptr[msg.sender][tokenAddr][tokenId]];
     }
 
     function getAllListings()

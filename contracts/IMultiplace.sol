@@ -40,6 +40,7 @@ interface IMultiplace is IERC165 {
         uint256 indexed tokenId,
         address indexed seller,
         uint256 unitPrice,
+        uint256 amount,
         address paymentToken,
         NFT_TYPE nftType,
         address royaltyReceiver,
