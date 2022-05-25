@@ -1,10 +1,17 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const {
+  expect
+} = require("chai");
+const {
+  ethers
+} = require("hardhat");
 const {
   constants, // Common constants, like the zero address and largest integers
 } = require("@openzeppelin/test-helpers");
 
-const { NFT_TYPE, listingToObject } = require("./utils");
+const {
+  NFT_TYPE,
+  listingToObject
+} = require("./utils");
 
 describe("Listing", async () => {
   let owner;
@@ -213,16 +220,16 @@ describe("Listing", async () => {
 
     await expect(
       multiplace
-        .connect(lister)
-        .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
     ).to.be.revertedWith("Invalid payment token");
 
     tokenAddr = erc721Mock.address;
 
     await expect(
       multiplace
-        .connect(lister)
-        .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
     ).to.be.revertedWith("Invalid payment token");
   });
 
@@ -241,8 +248,8 @@ describe("Listing", async () => {
 
     await expect(
       multiplace
-        .connect(lister)
-        .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
     ).to.be.revertedWith("NFT not ERC165");
   });
 
@@ -261,8 +268,8 @@ describe("Listing", async () => {
 
     await expect(
       multiplace
-        .connect(lister)
-        .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
     ).to.be.revertedWith("NFT type unknown");
   });
 
@@ -275,8 +282,8 @@ describe("Listing", async () => {
 
     await expect(
       multiplace
-        .connect(notLister)
-        .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
+      .connect(notLister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
     ).to.be.revertedWith("Sender not owner of amount");
   });
 
@@ -289,8 +296,8 @@ describe("Listing", async () => {
 
     await expect(
       multiplace
-        .connect(notLister)
-        .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
+      .connect(notLister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
     ).to.be.revertedWith("Sender not owner");
   });
 
@@ -308,8 +315,8 @@ describe("Listing", async () => {
 
     await expect(
       multiplace
-        .connect(lister)
-        .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
     ).to.be.revertedWith("Marketplace not approved for ERC721");
   });
 
@@ -327,8 +334,8 @@ describe("Listing", async () => {
 
     await expect(
       multiplace
-        .connect(lister)
-        .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
     ).to.be.revertedWith("Marketplace not approved for ERC1155");
   });
 
@@ -345,8 +352,8 @@ describe("Listing", async () => {
 
     await expect(
       multiplace
-        .connect(lister)
-        .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
     ).to.be.revertedWith("Invalid price");
   });
   it("fails if price is 0 for ERC1155", async () => {
@@ -362,8 +369,8 @@ describe("Listing", async () => {
 
     await expect(
       multiplace
-        .connect(lister)
-        .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
     ).to.be.revertedWith("Invalid price");
   });
 
@@ -389,20 +396,18 @@ describe("Listing", async () => {
     let listings = await multiplace.getAllListings();
     listings = listings.map(listingToObject);
 
-    let expectedListings = [
-      {
-        listPtr: 0,
-        tokenAddr: erc1155With2981Mock.address,
-        tokenId: tokenId,
-        seller: lister.address,
-        unitPrice: unitPrice,
-        amount: amount,
-        paymentToken: paymentToken,
-        nftType: NFT_TYPE.ERC1155_2981,
-        reservedUntil: 0,
-        reservedFor: constants.ZERO_ADDRESS,
-      },
-    ];
+    let expectedListings = [{
+      listPtr: 0,
+      tokenAddr: erc1155With2981Mock.address,
+      tokenId: tokenId,
+      seller: lister.address,
+      unitPrice: unitPrice,
+      amount: amount,
+      paymentToken: paymentToken,
+      nftType: NFT_TYPE.ERC1155_2981,
+      reservedUntil: 0,
+      reservedFor: constants.ZERO_ADDRESS,
+    }, ];
 
     expect(listings).to.be.deep.equal(expectedListings);
   });
@@ -425,20 +430,18 @@ describe("Listing", async () => {
     let listings = await multiplace.getAllListings();
     listings = listings.map(listingToObject);
 
-    let expectedListings = [
-      {
-        listPtr: 0,
-        tokenAddr: erc721With2981Mock.address,
-        tokenId: tokenId,
-        seller: lister.address,
-        unitPrice: unitPrice,
-        amount: amount,
-        paymentToken: paymentToken,
-        nftType: NFT_TYPE.ERC721_2981,
-        reservedUntil: 0,
-        reservedFor: constants.ZERO_ADDRESS,
-      },
-    ];
+    let expectedListings = [{
+      listPtr: 0,
+      tokenAddr: erc721With2981Mock.address,
+      tokenId: tokenId,
+      seller: lister.address,
+      unitPrice: unitPrice,
+      amount: amount,
+      paymentToken: paymentToken,
+      nftType: NFT_TYPE.ERC721_2981,
+      reservedUntil: 0,
+      reservedFor: constants.ZERO_ADDRESS,
+    }, ];
 
     expect(listings).to.be.deep.equal(expectedListings);
   });
@@ -461,27 +464,25 @@ describe("Listing", async () => {
     let listings = await multiplace.getAllListings();
     listings = listings.map(listingToObject);
 
-    let expectedListings = [
-      {
-        listPtr: 0,
-        tokenAddr: erc1155Mock.address,
-        tokenId: tokenId,
-        seller: lister.address,
-        unitPrice: unitPrice,
-        amount: amount,
-        paymentToken: paymentToken,
-        nftType: NFT_TYPE.ERC1155,
-        reservedUntil: 0,
-        reservedFor: constants.ZERO_ADDRESS,
-      },
-    ];
+    let expectedListings = [{
+      listPtr: 0,
+      tokenAddr: erc1155Mock.address,
+      tokenId: tokenId,
+      seller: lister.address,
+      unitPrice: unitPrice,
+      amount: amount,
+      paymentToken: paymentToken,
+      nftType: NFT_TYPE.ERC1155,
+      reservedUntil: 0,
+      reservedFor: constants.ZERO_ADDRESS,
+    }, ];
 
     expect(listings).to.be.deep.equal(expectedListings);
 
     await expect(
       multiplace
-        .connect(lister)
-        .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
     ).to.be.revertedWith("NFT already listed by sender");
   });
 
@@ -506,8 +507,8 @@ describe("Listing", async () => {
 
     await expect(
       multiplace
-        .connect(notLister)
-        .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
+      .connect(notLister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
     ).to.be.revertedWith("Sender not owner of amount");
   });
 
@@ -540,16 +541,91 @@ describe("Listing", async () => {
     let listings = await multiplace.getAllListings();
     listings = listings.map(listingToObject);
 
-    let expectedListings = [
-      {
+    let expectedListings = [{
+      listPtr: 0,
+      tokenAddr: erc1155Mock.address,
+      tokenId: tokenId,
+      seller: lister.address,
+      unitPrice: unitPrice,
+      amount: amount,
+      paymentToken: paymentToken,
+      nftType: NFT_TYPE.ERC1155,
+      reservedUntil: 0,
+      reservedFor: constants.ZERO_ADDRESS,
+    }, ];
+
+    expect(listings).to.be.deep.equal(expectedListings);
+
+    await expect(
+      multiplace
+      .connect(notLister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
+    ).to.be.revertedWith("Sender not owner of amount");
+  });
+
+  it("allListings updated correctly if 3 ERC721 tokenIds are listed from the same lister ", async () => {
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 0;
+    let amount = 5; //this doesn't matter - it will default to amount=1 in the contract for ERC721
+    let unitPrice = 10;
+    let paymentToken = erc20Mock.address;
+
+    await erc721Mock
+      .connect(lister)
+      .setApprovalForAll(multiplace.address, true);
+
+    await multiplace
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    let listings = await multiplace.getAllListings();
+    listings = listings.map(listingToObject);
+
+    let expectedListings = [{
+      listPtr: 0,
+      tokenAddr: erc721Mock.address,
+      tokenId: 0,
+      seller: lister.address,
+      unitPrice: unitPrice,
+      amount: 1,
+      paymentToken: paymentToken,
+      nftType: NFT_TYPE.ERC721,
+      reservedUntil: 0,
+      reservedFor: constants.ZERO_ADDRESS,
+    }, ];
+
+    expect(listings).to.be.deep.equal(expectedListings);
+
+    tokenId = 1;
+
+    await multiplace
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    listings = await multiplace.getAllListings();
+    listings = listings.map(listingToObject);
+
+    expectedListings = [{
         listPtr: 0,
-        tokenAddr: erc1155Mock.address,
-        tokenId: tokenId,
+        tokenAddr: erc721Mock.address,
+        tokenId: 0,
         seller: lister.address,
         unitPrice: unitPrice,
-        amount: amount,
+        amount: 1,
         paymentToken: paymentToken,
-        nftType: NFT_TYPE.ERC1155,
+        nftType: NFT_TYPE.ERC721,
+        reservedUntil: 0,
+        reservedFor: constants.ZERO_ADDRESS,
+      },
+      {
+        listPtr: 1,
+        tokenAddr: erc721Mock.address,
+        tokenId: 1,
+        seller: lister.address,
+        unitPrice: unitPrice,
+        amount: 1,
+        paymentToken: paymentToken,
+        nftType: NFT_TYPE.ERC721,
         reservedUntil: 0,
         reservedFor: constants.ZERO_ADDRESS,
       },
@@ -557,16 +633,59 @@ describe("Listing", async () => {
 
     expect(listings).to.be.deep.equal(expectedListings);
 
-    await expect(
-      multiplace
-        .connect(notLister)
-        .list(tokenAddr, tokenId, amount, unitPrice, paymentToken)
-    ).to.be.revertedWith("Sender not owner of amount");
+    tokenId = 2;
+
+    await multiplace
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    listings = await multiplace.getAllListings();
+    listings = listings.map(listingToObject);
+
+    expectedListings = [{
+        listPtr: 0,
+        tokenAddr: erc721Mock.address,
+        tokenId: 0,
+        seller: lister.address,
+        unitPrice: unitPrice,
+        amount: 1,
+        paymentToken: paymentToken,
+        nftType: NFT_TYPE.ERC721,
+        reservedUntil: 0,
+        reservedFor: constants.ZERO_ADDRESS,
+      },
+      {
+        listPtr: 1,
+        tokenAddr: erc721Mock.address,
+        tokenId: 1,
+        seller: lister.address,
+        unitPrice: unitPrice,
+        amount: 1,
+        paymentToken: paymentToken,
+        nftType: NFT_TYPE.ERC721,
+        reservedUntil: 0,
+        reservedFor: constants.ZERO_ADDRESS,
+      },
+      {
+        listPtr: 2,
+        tokenAddr: erc721Mock.address,
+        tokenId: 2,
+        seller: lister.address,
+        unitPrice: unitPrice,
+        amount: 1,
+        paymentToken: paymentToken,
+        nftType: NFT_TYPE.ERC721,
+        reservedUntil: 0,
+        reservedFor: constants.ZERO_ADDRESS,
+      },
+    ];
+
+    expect(listings).to.be.deep.equal(expectedListings);
   });
 
-  it.skip("allListings updated correctly if 3 ERC721 tokenIds are listed from the same lister ", async () => {});
-
-  it.skip("allListings updated correctly if 3 ERC721 tokenIds are listed each from a different lister ", async () => {});
+  it.skip("allListings updated correctly if 3 ERC721 tokenIds are listed each from a different lister ", async () => {
+    
+  });
 
   it.skip("allListings updated correctly if 4 ERC721 items are listed, 2 from seller 1, 2 from seller 2", async () => {});
 
@@ -620,8 +739,7 @@ describe("Listing", async () => {
     let listings = await multiplace.getAllListings();
     listings = listings.map(listingToObject);
 
-    let expectedListings = [
-      {
+    let expectedListings = [{
         listPtr: 0,
         tokenAddr: erc1155Mock.address,
         tokenId: tokenId,
