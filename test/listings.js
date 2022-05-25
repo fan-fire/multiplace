@@ -1044,7 +1044,7 @@ describe("Listing", async () => {
     expect(listings).to.be.deep.equal(expectedListings);
   });
 
-  it.skip("allListings updated correctly if 2 ERC1155 with same tokenIds from different listers", async () => {
+  it("allListings updated correctly if 2 ERC1155 with same tokenIds from different listers", async () => {
     let from = lister.address;
     let to = notLister.address;
     let tokenId = 1;
