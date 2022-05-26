@@ -1,5 +1,5 @@
 {
-    "printers_to_run": "contract-summary,data-dependency,constructor-calls,function-id,function-summary,human-summary,inheritance,modifiers,require,slithir,variable-order,vars-and-auth",
+    "printers_to_run": "contract-summary,data-dependency,constructor-calls,human-summary",
     "exclude_informational": false,
     "exclude_low": false,
     "exclude_medium": false,
