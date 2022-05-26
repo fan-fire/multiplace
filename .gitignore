@@ -8,3 +8,9 @@ typechain
 cache
 artifacts
 *.log
+
+#Truffle files
+build
+
+#Sliter files
+slither-output.json
