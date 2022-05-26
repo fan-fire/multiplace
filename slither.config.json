@@ -1,0 +1,11 @@
+{
+    "printers_to_run": "contract-summary,data-dependency,constructor-calls,function-id,function-summary,human-summary,inheritance,modifiers,require,slithir,variable-order,vars-and-auth",
+    "exclude_informational": false,
+    "exclude_low": false,
+    "exclude_medium": false,
+    "exclude_high": false,
+    "json": "slither-output.json",
+    "disable_color": false,
+    "filter_paths": "Multiplace.sol,IMultiplace.sol,ProxyMultiplace.sol,Storage.sol",
+    "legacy_ast": false
+}
