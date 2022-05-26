@@ -4,7 +4,6 @@
     "exclude_low": false,
     "exclude_medium": false,
     "exclude_high": false,
-    "json": "slither-output.json",
     "disable_color": false,
     "filter_paths": "Multiplace.sol,IMultiplace.sol,ProxyMultiplace.sol,Storage.sol",
     "legacy_ast": false
