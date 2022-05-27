@@ -32,6 +32,8 @@ describe("Listing", async () => {
   beforeEach(async () => {
     [owner, notLister, lister, acc1, acc2, acc3] = await ethers.getSigners();
 
+    
+
     /* =======================================/
     /                                         /
     /                                         /
@@ -45,8 +47,13 @@ describe("Listing", async () => {
     /                                         /
     /                                         /
     /======================================= */
+    const NFTLib = await ethers.getContractFactory("NFTLib");
+    const nftLib = await NFTLib.deploy();
+    
 
-    const Multiplace = await ethers.getContractFactory("Multiplace");
+
+    const Multiplace = await ethers.getContractFactory("Multiplace", {
+      libraries: {NFTLib: nftLib.address}});
     multiplace = await Multiplace.deploy();
     await multiplace.deployed();
 

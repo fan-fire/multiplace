@@ -12,8 +12,7 @@ import "./IMultiplace.sol";
 
 import "./Storage.sol";
 
-// Defining Library
-library NFT {
+library NFTLib {
     using ERC165Checker for address;
 
     function getType(address tokenAddr)
@@ -46,9 +45,7 @@ library NFT {
 }
 
 contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
-    using Strings for address;
-
-    using NFT for address;
+    using NFTLib for address;
 
     function list(
         address tokenAddr,
@@ -176,113 +173,7 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         uint256 tokenId,
         uint256 amount
     ) external override {
-        // check if listing is still valid
-        bool isSellerOwner;
-        bool isTokenStillApproved;
-        Listing memory listing;
-        (isSellerOwner, isTokenStillApproved, listing) = status(
-            seller,
-            tokenAddr,
-            tokenId
-        );
-
-        require(isSellerOwner, "NFT not owned by seller anymore");
-        require(isTokenStillApproved, "NFT not approved anymore");
-
-        // check reserving
-        if (block.timestamp < listing.reservedUntil) {
-            require(
-                listing.reservedFor == msg.sender,
-                "NFT reserved for another account"
-            );
-        }
-
-        // check balance of msg.sender for listed item
-        uint256 price = listing.unitPrice * listing.amount;
-        address paymentToken = listing.paymentToken;
-
-        require(
-            IERC20(paymentToken).balanceOf(msg.sender) >= price,
-            "Insufficient funds"
-        );
-        // check if marketplace is allowed to transfer payment token
-        require(
-            //  allowance(address owner, address spender)
-            IERC20(paymentToken).allowance(msg.sender, address(this)) >= price,
-            "Marketplace not approved"
-        );
-
-        // get royalties from mapping
-        Royalty memory royalty = getRoyalties(seller, tokenAddr, tokenId);
-
-        listing.amount = listing.amount - amount;
-
-        // unlist token
-        require(_unlist(listing), "Unlist failed");
-
-        // transfer funds to marketplace
-
-        require(
-            IERC20(paymentToken).transferFrom(msg.sender, address(this), price),
-            "ERC20 transfer failed"
-        );
-
-        // update _balances
-        uint256 royaltyAmount = royalty.royaltyAmount;
-        uint256 protocolAmount = (price * protocolFeeNumerator) /
-            protocolFeeDenominator;
-
-        // pay seller
-        _balances[paymentToken][listing.seller] =
-            _balances[paymentToken][listing.seller] +
-            price -
-            royaltyAmount -
-            protocolAmount;
-
-        // pay artist
-        _balances[paymentToken][royalty.receiver] =
-            _balances[paymentToken][royalty.receiver] +
-            royaltyAmount;
-
-        // pay protocol
-        _balances[paymentToken][protocolWallet] =
-            _balances[paymentToken][protocolWallet] +
-            protocolAmount;
-
-        // INTEGRATIONS
-        if (
-            listing.nftType == NFT_TYPE.ERC721 ||
-            listing.nftType == NFT_TYPE.ERC721_2981
-        ) {
-            IERC721(tokenAddr).safeTransferFrom(
-                listing.seller,
-                msg.sender,
-                tokenId
-            );
-        } else if (
-            listing.nftType == NFT_TYPE.ERC1155 ||
-            listing.nftType == NFT_TYPE.ERC1155_2981
-        ) {
-            IERC1155(tokenAddr).safeTransferFrom(
-                listing.seller,
-                msg.sender,
-                tokenId,
-                amount,
-                ""
-            );
-        }
-        emit Bought(
-            listing.listPtr,
-            tokenAddr,
-            tokenId,
-            msg.sender,
-            listing.unitPrice,
-            amount,
-            paymentToken,
-            listing.nftType,
-            royalty.receiver,
-            royalty.royaltyAmount
-        );
+       uint256 a=4;
     }
 
     function status(
@@ -407,14 +298,6 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         return _token2Ptr[seller][tokenAddr][tokenId];
     }
 
-    /**
-     * @dev Method that only the owner of the Marketplace can call to add approved ERC20 address to be accepted as payment for listings
-     * Requirements:
-     *
-     * - `paymentToken` must be a valid ERC20 address
-     *
-     * Emits a {PaymentTokenAdded} event.
-     */
     function addPaymentToken(address paymentToken) public override onlyOwner {
         // check if payment token is in isPaymentToken
         require(!isPaymentToken(paymentToken), "Payment token already added");
@@ -463,15 +346,6 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
     {
         require(isPaymentToken(paymentToken), "Unkown payment token");
         return _balances[paymentToken][account];
-    }
-
-    function getSeller(address tokenAddr, uint256 tokenId)
-        external
-        view
-        override
-        returns (address seller)
-    {
-        uint256 a = 4;
     }
 
     function getListingByPointer(uint256 listPtr)

@@ -165,11 +165,6 @@ interface IMultiplace is IERC165 {
         view
         returns (uint256 balance);
 
-    function getSeller(address tokenAddr, uint256 tokenId)
-        external
-        view
-        returns (address seller);
-
     function getListingByPointer(uint256 listPtr)
         external
         view
