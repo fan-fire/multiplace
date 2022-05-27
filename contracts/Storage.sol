@@ -28,9 +28,4 @@ abstract contract Storage is Ownable, AccessControl {
     uint256 public protocolFeeNumerator = 2500000000000; //Numerator of the protocol fee
     uint256 public protocolFeeDenominator = 100000000000000; //Denominator of the protocol fee
     IMultiplace.Listing[] internal _listings; //Listings of the marketplace
-
-    // Future proof a bit with string mappings to use for storage
-    mapping(string => string) public stringStorage;
-    mapping(string => uint256) public uintStorage;
-    mapping(string => bool) public boolStorage;
 }

@@ -12,9 +12,43 @@ import "./IMultiplace.sol";
 
 import "./Storage.sol";
 
+// Defining Library
+library NFT {
+    using ERC165Checker for address;
+
+    function getType(address tokenAddr)
+        public
+        returns (IMultiplace.NFT_TYPE tokenType)
+    {
+        require(tokenAddr.supportsERC165(), "NFT not ERC165");
+
+        bool isERC721 = tokenAddr.supportsInterface(type(IERC721).interfaceId);
+        bool isERC1155 = tokenAddr.supportsInterface(
+            type(IERC1155).interfaceId
+        );
+        bool isERC2981 = tokenAddr.supportsInterface(
+            type(IERC2981).interfaceId
+        );
+
+        // get NFT type, one of ERC721, ERC1155, ERC721_2981, ERC1155_2981
+        if (isERC1155 && !isERC2981) {
+            tokenType = IMultiplace.NFT_TYPE.ERC1155;
+        } else if (isERC721 && !isERC2981) {
+            tokenType = IMultiplace.NFT_TYPE.ERC721;
+        } else if (isERC1155 && isERC2981) {
+            tokenType = IMultiplace.NFT_TYPE.ERC1155_2981;
+        } else if (isERC721 && isERC2981) {
+            tokenType = IMultiplace.NFT_TYPE.ERC721_2981;
+        } else {
+            tokenType = IMultiplace.NFT_TYPE.UNKNOWN;
+        }
+    }
+}
+
 contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
     using Strings for address;
-    using ERC165Checker for address;
+
+    using NFT for address;
 
     function list(
         address tokenAddr,
@@ -37,7 +71,7 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         _isListed[msg.sender][tokenAddr][tokenId] = true;
 
         // check that we've got a valid 721 or 1155, either with, or without 2981
-        NFT_TYPE _nftType = nftType(tokenAddr);
+        NFT_TYPE _nftType = tokenAddr.getType();
         require(_nftType != NFT_TYPE.UNKNOWN, "NFT type unknown");
 
         // check if sender owns NFT-tokenId
@@ -419,36 +453,6 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         uint256 tokenId
     ) public view override returns (bool hasBeenListed) {
         return _isListed[seller][tokenAddr][tokenId];
-    }
-
-    function nftType(address tokenAddr)
-        public
-        view
-        override
-        returns (NFT_TYPE tokenType)
-    {
-        require(tokenAddr.supportsERC165(), "NFT not ERC165");
-
-        bool isERC721 = tokenAddr.supportsInterface(type(IERC721).interfaceId);
-        bool isERC1155 = tokenAddr.supportsInterface(
-            type(IERC1155).interfaceId
-        );
-        bool isERC2981 = tokenAddr.supportsInterface(
-            type(IERC2981).interfaceId
-        );
-
-        // get NFT type, one of ERC721, ERC1155, ERC721_2981, ERC1155_2981
-        if (isERC1155 && !isERC2981) {
-            tokenType = NFT_TYPE.ERC1155;
-        } else if (isERC721 && !isERC2981) {
-            tokenType = NFT_TYPE.ERC721;
-        } else if (isERC1155 && isERC2981) {
-            tokenType = NFT_TYPE.ERC1155_2981;
-        } else if (isERC721 && isERC2981) {
-            tokenType = NFT_TYPE.ERC721_2981;
-        } else {
-            tokenType = NFT_TYPE.UNKNOWN;
-        }
     }
 
     function getBalance(address paymentToken, address account)

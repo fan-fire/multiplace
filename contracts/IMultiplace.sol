@@ -197,9 +197,4 @@ interface IMultiplace is IERC165 {
     ) external;
 
     function pullFunds(address paymentToken, uint256 amount) external;
-
-    function nftType(address tokenAddr)
-        external
-        view
-        returns (NFT_TYPE nftType);
 }
