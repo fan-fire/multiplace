@@ -17,42 +17,42 @@ interface IMultiplace is IERC165 {
     }
 
     struct Listing {
-        uint256 listPtr; //Pointer to where this listing is located in the listings array
+        uint32 listPtr; //Pointer to where this listing is located in the listings array
         address tokenAddr; //Address of the ERC721 or ERC1155 contract of the listed item
         uint256 tokenId; //token ID of the listed item for tokenAddr
         address seller; //Address of the seller
-        uint256 unitPrice; //unitPrice of the listed item
-        uint256 amount; //number of tokens in listing
+        uint32 unitPrice; //unitPrice of the listed item
+        uint32 amount; //number of tokens in listing
         address paymentToken; //Address of the ERC20 contract that will be used to pay for the listing
         NFT_TYPE nftType; //Type of the listed item. Either ERC721 or ERC1155 with or without ERC2981
-        uint256 reservedUntil; //Timestamp when the listing will be reserved
+        uint32 reservedUntil; //Timestamp when the listing will be reserved
         address reservedFor; //Address of the buyer who reserved the listing
     }
 
     event ProtocolWalletChanged(address newProtocolWallet);
     event ProtocolFeeChanged(
-        uint256 newProtocolFeeNumerator,
-        uint256 newProtocolFeeDenominator
+        uint32 newProtocolFeeNumerator,
+        uint32 newProtocolFeeDenominator
     );
     event Listed(
-        uint256 listPtr,
+        uint32 listPtr,
         address indexed tokenAddr,
         uint256 indexed tokenId,
         address indexed seller,
-        uint256 unitPrice,
-        uint256 amount,
+        uint32 unitPrice,
+        uint32 amount,
         address paymentToken,
         NFT_TYPE nftType,
         address royaltyReceiver,
         uint256 royaltyAmount
     );
     event Bought(
-        uint256 listPtr,
+        uint32 listPtr,
         address indexed tokenAddr,
         uint256 indexed tokenId,
         address indexed buyer,
-        uint256 unitPrice,
-        uint256 amount,
+        uint32 unitPrice,
+        uint32 amount,
         address paymentToken,
         NFT_TYPE nftType,
         address royaltyReceiver,
@@ -64,7 +64,7 @@ interface IMultiplace is IERC165 {
     event FundsWithdrawn(
         address indexed to,
         address indexed paymentToken,
-        uint256 amount
+        uint32 amount
     );
     event RoyaltiesSet(
         address lister,
@@ -79,8 +79,8 @@ interface IMultiplace is IERC165 {
         address indexed tokenAddr,
         uint256 indexed tokenId,
         address indexed reservedFor,
-        uint256 period,
-        uint256 reservedUntil
+        uint32 period,
+        uint32 reservedUntil
     );
 
     event UnlistStale(address indexed tokenAddr, uint256 indexed tokenId);
@@ -88,8 +88,8 @@ interface IMultiplace is IERC165 {
     function list(
         address tokenAddr,
         uint256 tokenId,
-        uint256 amount,
-        uint256 unitPrice,
+        uint32 amount,
+        uint32 unitPrice,
         address paymentToken
     ) external;
 
@@ -97,7 +97,7 @@ interface IMultiplace is IERC165 {
         address seller,
         address tokenAddr,
         uint256 tokenId,
-        uint256 amount
+        uint32 amount
     ) external;
 
     function status(
@@ -122,7 +122,7 @@ interface IMultiplace is IERC165 {
     function reserve(
         address tokenAddr,
         uint256 tokenId,
-        uint256 period,
+        uint32 period,
         address reservee
     ) external;
 
@@ -130,7 +130,7 @@ interface IMultiplace is IERC165 {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external view returns (address reservedFor, uint256 reservedUntil);
+    ) external view returns (address reservedFor, uint32 reservedUntil);
 
     function unlist(address tokenAddr, uint256 tokenId) external;
 
@@ -138,15 +138,15 @@ interface IMultiplace is IERC165 {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external view returns (uint256 listPtr);
+    ) external view returns (uint32 listPtr);
 
     function addPaymentToken(address paymentToken) external;
 
     function changeProtocolWallet(address newProtocolWallet) external;
 
     function changeProtocolFee(
-        uint256 newProtocolFeeNumerator,
-        uint256 newProtocolFeeDenominator
+        uint32 newProtocolFeeNumerator,
+        uint32 newProtocolFeeDenominator
     ) external;
 
     function isListed(
@@ -165,7 +165,7 @@ interface IMultiplace is IERC165 {
         view
         returns (uint256 balance);
 
-    function getListingByPointer(uint256 listPtr)
+    function getListingByPointer(uint32 listPtr)
         external
         view
         returns (Listing memory listing);
@@ -188,8 +188,8 @@ interface IMultiplace is IERC165 {
         address seller,
         address tokenAddr,
         uint256 tokenId,
-        uint256 amount
+        uint32 amount
     ) external;
 
-    function pullFunds(address paymentToken, uint256 amount) external;
+    function pullFunds(address paymentToken, uint32 amount) external;
 }

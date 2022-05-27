@@ -50,8 +50,8 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
     function list(
         address tokenAddr,
         uint256 tokenId,
-        uint256 amount,
-        uint256 unitPrice,
+        uint32 amount,
+        uint32 unitPrice,
         address paymentToken
     ) external override whenNotPaused {
         // check passed variable values
@@ -96,7 +96,7 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         }
 
         // get numListings for listPtr
-        uint256 listPtr = numListings;
+        uint32 listPtr = numListings;
         // create listing
         Listing memory listing = Listing(
             listPtr,
@@ -171,9 +171,115 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         address seller,
         address tokenAddr,
         uint256 tokenId,
-        uint256 amount
+        uint32 amount
     ) external override {
-       uint256 a=4;
+        // check if listing is still valid
+        bool isSellerOwner;
+        bool isTokenStillApproved;
+        Listing memory listing;
+        (isSellerOwner, isTokenStillApproved, listing) = status(
+            seller,
+            tokenAddr,
+            tokenId
+        );
+
+        require(isSellerOwner, "NFT not owned by seller anymore");
+        require(isTokenStillApproved, "NFT not approved anymore");
+
+        // check reserving
+        if (block.timestamp < listing.reservedUntil) {
+            require(
+                listing.reservedFor == msg.sender,
+                "NFT reserved for another account"
+            );
+        }
+
+        // check balance of msg.sender for listed item
+        uint32 price = listing.unitPrice * listing.amount;
+        address paymentToken = listing.paymentToken;
+
+        require(
+            IERC20(paymentToken).balanceOf(msg.sender) >= price,
+            "Insufficient funds"
+        );
+        // check if marketplace is allowed to transfer payment token
+        require(
+            //  allowance(address owner, address spender)
+            IERC20(paymentToken).allowance(msg.sender, address(this)) >= price,
+            "Marketplace not approved"
+        );
+
+        // get royalties from mapping
+        Royalty memory royalty = getRoyalties(seller, tokenAddr, tokenId);
+
+        listing.amount = listing.amount - amount;
+
+        // unlist token
+        require(_unlist(listing), "Unlist failed");
+
+        // transfer funds to marketplace
+
+        require(
+            IERC20(paymentToken).transferFrom(msg.sender, address(this), price),
+            "ERC20 transfer failed"
+        );
+
+        // update _balances
+        uint256 royaltyAmount = royalty.royaltyAmount;
+        uint32 protocolAmount = (price * protocolFeeNumerator) /
+            protocolFeeDenominator;
+
+        // pay seller
+        _balances[paymentToken][listing.seller] =
+            _balances[paymentToken][listing.seller] +
+            price -
+            royaltyAmount -
+            protocolAmount;
+
+        // pay artist
+        _balances[paymentToken][royalty.receiver] =
+            _balances[paymentToken][royalty.receiver] +
+            royaltyAmount;
+
+        // pay protocol
+        _balances[paymentToken][protocolWallet] =
+            _balances[paymentToken][protocolWallet] +
+            protocolAmount;
+
+        // INTEGRATIONS
+        if (
+            listing.nftType == NFT_TYPE.ERC721 ||
+            listing.nftType == NFT_TYPE.ERC721_2981
+        ) {
+            IERC721(tokenAddr).safeTransferFrom(
+                listing.seller,
+                msg.sender,
+                tokenId
+            );
+        } else if (
+            listing.nftType == NFT_TYPE.ERC1155 ||
+            listing.nftType == NFT_TYPE.ERC1155_2981
+        ) {
+            IERC1155(tokenAddr).safeTransferFrom(
+                listing.seller,
+                msg.sender,
+                tokenId,
+                amount,
+                ""
+            );
+        }
+        emit Bought(
+            listing.listPtr,
+            tokenAddr,
+            tokenId,
+            msg.sender,
+            listing.unitPrice,
+            amount,
+            paymentToken,
+            listing.nftType,
+            royalty.receiver,
+            royalty.royaltyAmount
+        );
     }
 
     function status(
@@ -228,16 +334,16 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         address tokenAddr,
         uint256 tokenId
     ) external override {
-        uint256 a = 4;
+        uint32 a = 4;
     }
 
     function reserve(
         address tokenAddr,
         uint256 tokenId,
-        uint256 period,
+        uint32 period,
         address reservee
     ) external override {
-        uint256 a = 4;
+        uint32 a = 4;
     }
 
     function getReservedState(
@@ -248,9 +354,9 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         external
         view
         override
-        returns (address reservedFor, uint256 reservedUntil)
+        returns (address reservedFor, uint32 reservedUntil)
     {
-        uint256 a = 4;
+        uint32 a = 4;
     }
 
     function unlist(address tokenAddr, uint256 tokenId)
@@ -266,7 +372,7 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
 
     function _unlist(Listing memory listingToRemove) private returns (bool) {
         require(listingToRemove.amount == 0, "Still tokens left in listing");
-        uint256 listPtrToRemove = listingToRemove.listPtr;
+        uint32 listPtrToRemove = listingToRemove.listPtr;
         // pop from _listings,
         Listing memory lastListing = _listings[_listings.length - 1];
         lastListing.listPtr = listPtrToRemove;
@@ -293,7 +399,7 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external view override returns (uint256 listPtr) {
+    ) external view override returns (uint32 listPtr) {
         require(_isListed[seller][tokenAddr][tokenId], "Listing not found");
         return _token2Ptr[seller][tokenAddr][tokenId];
     }
@@ -317,8 +423,8 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
     }
 
     function changeProtocolFee(
-        uint256 newProtocolFeeNumerator,
-        uint256 newProtocolFeeDenominator
+        uint32 newProtocolFeeNumerator,
+        uint32 newProtocolFeeDenominator
     ) external override onlyOwner {
         require(newProtocolFeeDenominator != 0, "denominator cannot be 0");
         protocolFeeNumerator = newProtocolFeeNumerator;
@@ -348,7 +454,7 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         return _balances[paymentToken][account];
     }
 
-    function getListingByPointer(uint256 listPtr)
+    function getListingByPointer(uint32 listPtr)
         external
         view
         override
@@ -390,12 +496,12 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         address seller,
         address tokenAddr,
         uint256 tokenId,
-        uint256 amount
+        uint32 amount
     ) external override {
-        uint256 a = 4;
+        uint32 a = 4;
     }
 
-    function pullFunds(address paymentToken, uint256 amount) external override {
+    function pullFunds(address paymentToken, uint32 amount) external override {
         // Checks
         require(isPaymentToken(paymentToken), "Payment token not supported");
         require(amount > 0, "Amount must be greater than 0");
