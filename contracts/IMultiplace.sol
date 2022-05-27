@@ -52,6 +52,7 @@ interface IMultiplace is IERC165 {
         uint256 indexed tokenId,
         address indexed buyer,
         uint256 unitPrice,
+        uint256 amount,
         address paymentToken,
         NFT_TYPE nftType,
         address royaltyReceiver,
@@ -95,14 +96,22 @@ interface IMultiplace is IERC165 {
     function buy(
         address seller,
         address tokenAddr,
-        uint256 tokenId
+        uint256 tokenId,
+        uint256 amount
     ) external;
 
     function status(
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external view returns (bool isSellerOwner, bool isTokenStillApproved);
+    )
+        external
+        view
+        returns (
+            bool isSellerOwner,
+            bool isTokenStillApproved,
+            Listing memory listing
+        );
 
     function unlistStale(
         address seller,
