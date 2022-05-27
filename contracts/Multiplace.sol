@@ -6,196 +6,106 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+
 import "./IMultiplace.sol";
+import "./IListings.sol";
 
 import "./Storage.sol";
 
-library NFTLib {
-    using ERC165Checker for address;
-
-    function getType(address tokenAddr)
-        public
-        returns (IMultiplace.NFT_TYPE tokenType)
-    {
-        require(tokenAddr.supportsERC165(), "NFT not ERC165");
-
-        bool isERC721 = tokenAddr.supportsInterface(type(IERC721).interfaceId);
-        bool isERC1155 = tokenAddr.supportsInterface(
-            type(IERC1155).interfaceId
-        );
-        bool isERC2981 = tokenAddr.supportsInterface(
-            type(IERC2981).interfaceId
-        );
-
-        // get NFT type, one of ERC721, ERC1155, ERC721_2981, ERC1155_2981
-        if (isERC1155 && !isERC2981) {
-            tokenType = IMultiplace.NFT_TYPE.ERC1155;
-        } else if (isERC721 && !isERC2981) {
-            tokenType = IMultiplace.NFT_TYPE.ERC721;
-        } else if (isERC1155 && isERC2981) {
-            tokenType = IMultiplace.NFT_TYPE.ERC1155_2981;
-        } else if (isERC721 && isERC2981) {
-            tokenType = IMultiplace.NFT_TYPE.ERC721_2981;
-        } else {
-            tokenType = IMultiplace.NFT_TYPE.UNKNOWN;
-        }
+contract Multiplace is IMultiplace, Storage, Pausable {
+    constructor() {
+        owner = msg.sender;
     }
-}
 
-contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
-    using NFTLib for address;
+    modifier listed(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) {
+        require(
+            listings.isListed(msg.sender, tokenAddr, tokenId),
+            "Token is listed"
+        );
+        _;
+    }
+
+    modifier notListed(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) {
+        require(
+            !listings.isListed(msg.sender, tokenAddr, tokenId),
+            "Token not listed"
+        );
+        _;
+    }
 
     function list(
         address tokenAddr,
         uint256 tokenId,
-        uint32 amount,
-        uint32 unitPrice,
+        uint256 amount,
+        uint256 unitPrice,
         address paymentToken
-    ) external override whenNotPaused {
+    )
+        external
+        override
+        whenNotPaused
+        notListed(msg.sender, tokenAddr, tokenId)
+    {
         // check passed variable values
-        require(amount > 0, "Invalid amount");
-        require(unitPrice > 0, "Invalid price");
-        require(isPaymentToken(paymentToken), "Invalid payment token");
-
-        // check that the NFT not listed already by sender
-        require(
-            !isListed(msg.sender, tokenAddr, tokenId),
-            "NFT already listed by sender"
-        );
-        // update _isListed first to avoid reentrancy
-        _isListed[msg.sender][tokenAddr][tokenId] = true;
-
-        // check that we've got a valid 721 or 1155, either with, or without 2981
-        NFT_TYPE _nftType = tokenAddr.getType();
-        require(_nftType != NFT_TYPE.UNKNOWN, "NFT type unknown");
-
-        // check if sender owns NFT-tokenId
-        // check that marketplace is allowed to transfer NFT-tokenId
-        if (_nftType == NFT_TYPE.ERC1155 || _nftType == NFT_TYPE.ERC1155_2981) {
-            require(
-                IERC1155(tokenAddr).balanceOf(msg.sender, tokenId) >= amount,
-                "Sender not owner of amount"
-            );
-            require(
-                IERC1155(tokenAddr).isApprovedForAll(msg.sender, address(this)),
-                "Marketplace not approved for ERC1155"
-            );
-        }
-        if (_nftType == NFT_TYPE.ERC721 || _nftType == NFT_TYPE.ERC721_2981) {
-            amount = 1;
-            require(
-                IERC721(tokenAddr).ownerOf(tokenId) == msg.sender,
-                "Sender not owner"
-            );
-            require(
-                IERC721(tokenAddr).isApprovedForAll(msg.sender, address(this)),
-                "Marketplace not approved for ERC721"
-            );
-        }
-
-        // get numListings for listPtr
-        uint32 listPtr = numListings;
-        // create listing
-        Listing memory listing = Listing(
-            listPtr,
+        require(admin.isPaymentToken(paymentToken), "Invalid payment token");
+        listings.list(
+            msg.sender,
             tokenAddr,
             tokenId,
-            msg.sender,
-            unitPrice,
             amount,
-            paymentToken,
-            _nftType,
-            0,
-            address(0)
+            unitPrice,
+            paymentToken
         );
 
-        numListings = numListings + 1;
-
-        // if nft supports ERC2981, create Royalties for tokenAddr/tokenId and set artist=receiver
-        //    else check if ERC721 or ERC1155 has owner(), if yes set artist=recever
-        //    else set artist=0x00
-        Royalty memory royalty = Royalty(address(0), 0);
-        if (
-            _nftType == NFT_TYPE.ERC721_2981 ||
-            _nftType == NFT_TYPE.ERC1155_2981
-        ) {
-            address receiver;
-            uint256 royaltyAmount;
-            (receiver, royaltyAmount) = IERC2981(tokenAddr).royaltyInfo(
-                tokenId,
-                unitPrice
-            );
-            royalty = Royalty(receiver, royaltyAmount);
-        } else {
-            bytes memory data = abi.encodeWithSignature("owner()");
-            (bool success, bytes memory returnData) = tokenAddr.call{value: 0}(
-                data
-            );
-
-            // if nft has owner(), set it as royalty beneficiary
-            if (success) {
-                address returnedAddress;
-
-                returnedAddress = abi.decode(returnData, (address));
-                royalty = Royalty(returnedAddress, 0);
-            } else {
-                royalty = Royalty(address(0), 0);
-            }
-        }
-        // set royalties mapping
-        _setRoyalties(msg.sender, tokenAddr, tokenId, royalty);
-
-        // update _token2Ptr
-        _token2Ptr[msg.sender][tokenAddr][tokenId] = listPtr;
-
-        // add to _listings
-        _listings.push(listing);
-
-        emit Listed(
-            listPtr,
+        IListings.Listing memory listing = listings.getListing(
+            msg.sender,
             tokenAddr,
-            tokenId,
-            msg.sender,
-            unitPrice,
-            amount,
-            paymentToken,
-            _nftType,
-            royalty.receiver,
-            royalty.royaltyAmount
+            tokenId
         );
+
+        IListings.Royalty memory royalty = listings.getRoyalties(
+            listing.seller,
+            listing.tokenAddr,
+            listing.tokenId
+        );
+
+        // emit Listed(
+        //     listing.listPtr,
+        //     listing.tokenAddr,
+        //     listing.tokenId,
+        //     listing.seller,
+        //     listing.unitPrice,
+        //     listing.amount,
+        //     listing.paymentToken,
+        //     listing.nftType,
+        //     royalty.receiver,
+        //     royalty.royaltyAmount
+        // );
     }
 
     function buy(
         address seller,
         address tokenAddr,
         uint256 tokenId,
-        uint32 amount
+        uint256 amount
     ) external override {
-        // check if listing is still valid
-        bool isSellerOwner;
-        bool isTokenStillApproved;
-        Listing memory listing;
-        (isSellerOwner, isTokenStillApproved, listing) = status(
+        listings.buy(msg.sender, seller, tokenAddr, tokenId, amount);
+
+        IListings.Listing memory listing = listings.getListing(
             seller,
             tokenAddr,
             tokenId
         );
 
-        require(isSellerOwner, "NFT not owned by seller anymore");
-        require(isTokenStillApproved, "NFT not approved anymore");
-
-        // check reserving
-        if (block.timestamp < listing.reservedUntil) {
-            require(
-                listing.reservedFor == msg.sender,
-                "NFT reserved for another account"
-            );
-        }
-
         // check balance of msg.sender for listed item
-        uint32 price = listing.unitPrice * listing.amount;
+        uint256 price = listing.unitPrice * listing.amount;
         address paymentToken = listing.paymentToken;
 
         require(
@@ -206,16 +116,22 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         require(
             //  allowance(address owner, address spender)
             IERC20(paymentToken).allowance(msg.sender, address(this)) >= price,
-            "Marketplace not approved"
+            "Not approved ERC20"
         );
 
         // get royalties from mapping
-        Royalty memory royalty = getRoyalties(seller, tokenAddr, tokenId);
 
-        listing.amount = listing.amount - amount;
+        IListings.Royalty memory royalty = listings.getRoyalties(
+            seller,
+            tokenAddr,
+            tokenId
+        );
 
         // unlist token
-        require(_unlist(listing), "Unlist failed");
+        require(
+            listings.buy(msg.sender, seller, tokenAddr, tokenId, amount),
+            "Buy failed"
+        );
 
         // transfer funds to marketplace
 
@@ -225,31 +141,30 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         );
 
         // update _balances
-        uint256 royaltyAmount = royalty.royaltyAmount;
-        uint32 protocolAmount = (price * protocolFeeNumerator) /
-            protocolFeeDenominator;
+        uint256 protocolAmount = (price * admin.protocolFeeNumerator()) /
+            admin.protocolFeeDenominator();
 
         // pay seller
         _balances[paymentToken][listing.seller] =
             _balances[paymentToken][listing.seller] +
             price -
-            royaltyAmount -
+            royalty.royaltyAmount -
             protocolAmount;
 
         // pay artist
         _balances[paymentToken][royalty.receiver] =
             _balances[paymentToken][royalty.receiver] +
-            royaltyAmount;
+            royalty.royaltyAmount;
 
         // pay protocol
-        _balances[paymentToken][protocolWallet] =
-            _balances[paymentToken][protocolWallet] +
+        _balances[paymentToken][admin.protocolWallet()] =
+            _balances[paymentToken][admin.protocolWallet()] +
             protocolAmount;
 
         // INTEGRATIONS
         if (
-            listing.nftType == NFT_TYPE.ERC721 ||
-            listing.nftType == NFT_TYPE.ERC721_2981
+            listing.nftType == IListings.NFT_TYPE.ERC721 ||
+            listing.nftType == IListings.NFT_TYPE.ERC721_2981
         ) {
             IERC721(tokenAddr).safeTransferFrom(
                 listing.seller,
@@ -257,8 +172,8 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
                 tokenId
             );
         } else if (
-            listing.nftType == NFT_TYPE.ERC1155 ||
-            listing.nftType == NFT_TYPE.ERC1155_2981
+            listing.nftType == IListings.NFT_TYPE.ERC1155 ||
+            listing.nftType == IListings.NFT_TYPE.ERC1155_2981
         ) {
             IERC1155(tokenAddr).safeTransferFrom(
                 listing.seller,
@@ -293,40 +208,10 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         returns (
             bool isSellerOwner,
             bool isTokenStillApproved,
-            Listing memory listing
+            IListings.Listing memory listing
         )
     {
-        listing = getListing(seller, tokenAddr, tokenId);
-
-        // check that current owner is still the owner and the marketplace is still approved, otherwise unlist
-        if (
-            listing.nftType == NFT_TYPE.ERC721 ||
-            listing.nftType == NFT_TYPE.ERC721_2981
-        ) {
-            isSellerOwner =
-                IERC721(listing.tokenAddr).ownerOf(listing.tokenId) ==
-                listing.seller;
-            isTokenStillApproved = IERC721(listing.tokenAddr).isApprovedForAll(
-                listing.seller,
-                address(this)
-            );
-        } else if (
-            listing.nftType == NFT_TYPE.ERC1155 ||
-            listing.nftType == NFT_TYPE.ERC1155_2981
-        ) {
-            isSellerOwner =
-                IERC1155(listing.tokenAddr).balanceOf(
-                    listing.seller,
-                    listing.tokenId
-                ) >=
-                listing.amount;
-            isTokenStillApproved = IERC1155(listing.tokenAddr).isApprovedForAll(
-                    listing.seller,
-                    address(this)
-                );
-        }
-
-        return (isSellerOwner, isTokenStillApproved, listing);
+        return (listings.status(seller, tokenAddr, tokenId));
     }
 
     function unlistStale(
@@ -334,16 +219,16 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         address tokenAddr,
         uint256 tokenId
     ) external override {
-        uint32 a = 4;
+        listings.unlistStale(seller, tokenAddr, tokenId);
     }
 
     function reserve(
         address tokenAddr,
         uint256 tokenId,
-        uint32 period,
+        uint256 period,
         address reservee
     ) external override {
-        uint32 a = 4;
+        listings.reserve(tokenAddr, tokenId, period, reservee);
     }
 
     function getReservedState(
@@ -352,11 +237,10 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         uint256 tokenId
     )
         external
-        view
         override
-        returns (address reservedFor, uint32 reservedUntil)
+        returns (address reservedFor, uint256 reservedUntil)
     {
-        uint32 a = 4;
+        return (listings.getReservedState(seller, tokenAddr, tokenId));
     }
 
     function unlist(address tokenAddr, uint256 tokenId)
@@ -364,75 +248,21 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         override
         whenNotPaused
     {
-        Listing memory listing = getListing(msg.sender, tokenAddr, tokenId);
-        // check reserving
-        require(block.timestamp >= listing.reservedUntil, "NFT reserved");
-        assert(_unlist(listing));
-    }
-
-    function _unlist(Listing memory listingToRemove) private returns (bool) {
-        require(listingToRemove.amount == 0, "Still tokens left in listing");
-        uint32 listPtrToRemove = listingToRemove.listPtr;
-        // pop from _listings,
-        Listing memory lastListing = _listings[_listings.length - 1];
-        lastListing.listPtr = listPtrToRemove;
-        _listings[listPtrToRemove] = lastListing;
-        _listings.pop();
-
-        // update _token2Ptr
-        _token2Ptr[lastListing.seller][lastListing.tokenAddr][
-            lastListing.tokenId
-        ] = listPtrToRemove;
-
-        // decrease numListings
-        numListings = numListings - 1;
-        // !don't remove from royatlies
-        _isListed[listingToRemove.seller][listingToRemove.tokenAddr][
-            listingToRemove.tokenId
-        ] = false;
-        assert(numListings >= 0);
-        emit Unlisted(lastListing.tokenAddr, lastListing.tokenId);
-        return true;
+        listings.unlist(msg.sender, tokenAddr, tokenId);
     }
 
     function getListingPointer(
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external view override returns (uint32 listPtr) {
-        require(_isListed[seller][tokenAddr][tokenId], "Listing not found");
-        return _token2Ptr[seller][tokenAddr][tokenId];
-    }
-
-    function addPaymentToken(address paymentToken) public override onlyOwner {
-        // check if payment token is in isPaymentToken
-        require(!isPaymentToken(paymentToken), "Payment token already added");
-        require(paymentToken != address(0), "0x00 not allowed");
-        _isPaymentToken[paymentToken] = true;
-        emit PaymentTokenAdded(paymentToken);
-    }
-
-    function changeProtocolWallet(address newProtocolWallet)
+    )
         external
+        view
         override
-        onlyOwner
+        listed(seller, tokenAddr, tokenId)
+        returns (uint256 listPtr)
     {
-        require(newProtocolWallet != address(0), "0x00 not allowed");
-        protocolWallet = newProtocolWallet;
-        emit ProtocolWalletChanged(newProtocolWallet);
-    }
-
-    function changeProtocolFee(
-        uint32 newProtocolFeeNumerator,
-        uint32 newProtocolFeeDenominator
-    ) external override onlyOwner {
-        require(newProtocolFeeDenominator != 0, "denominator cannot be 0");
-        protocolFeeNumerator = newProtocolFeeNumerator;
-        protocolFeeDenominator = newProtocolFeeDenominator;
-        emit ProtocolFeeChanged(
-            newProtocolFeeNumerator,
-            newProtocolFeeDenominator
-        );
+        return listings.getListingPointer(seller, tokenAddr, tokenId);
     }
 
     // Method that checks if seller has listed tokenAddr:tokenId
@@ -440,70 +270,57 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) public view override returns (bool hasBeenListed) {
-        return _isListed[seller][tokenAddr][tokenId];
+    ) public view override returns (bool listed) {
+        return listings.isListed(seller, tokenAddr, tokenId);
     }
 
-    function getBalance(address paymentToken, address account)
+    function getListingByPointer(uint256 listPtr)
         external
         view
         override
-        returns (uint256 balance)
+        returns (IListings.Listing memory listing)
     {
-        require(isPaymentToken(paymentToken), "Unkown payment token");
-        return _balances[paymentToken][account];
-    }
-
-    function getListingByPointer(uint32 listPtr)
-        external
-        view
-        override
-        returns (Listing memory listing)
-    {
-        return _listings[listPtr];
+        return listings.getListingByPointer(listPtr);
     }
 
     function getListing(
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) public view override returns (Listing memory listing) {
-        require(
-            _isListed[seller][tokenAddr][tokenId],
-            "NFT not listed for sender"
-        );
-        return _listings[_token2Ptr[msg.sender][tokenAddr][tokenId]];
+    )
+        public
+        view
+        override
+        listed(seller, tokenAddr, tokenId)
+        returns (IListings.Listing memory listing)
+    {
+        return listings.getListing(seller, tokenAddr, tokenId);
     }
 
     function getAllListings()
         external
         view
         override
-        returns (Listing[] memory listings)
+        returns (IListings.Listing[] memory)
     {
-        return _listings;
+        return listings.getAllListings();
     }
 
-    function getRoyalties(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId
-    ) public view override returns (Royalty memory royalty) {
-        return _royalties[seller][tokenAddr][tokenId];
+    function getBalance(address paymentToken, address account)
+        external
+        override
+        returns (uint256 balance)
+    {
+        require(admin.isPaymentToken(paymentToken), "Unkown payment token");
+        return _balances[paymentToken][account];
     }
 
-    function updateRoyaltyAmount(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId,
-        uint32 amount
-    ) external override {
-        uint32 a = 4;
-    }
-
-    function pullFunds(address paymentToken, uint32 amount) external override {
+    function pullFunds(address paymentToken, uint256 amount) external override {
         // Checks
-        require(isPaymentToken(paymentToken), "Payment token not supported");
+        require(
+            admin.isPaymentToken(paymentToken),
+            "Payment token not supported"
+        );
         require(amount > 0, "Amount must be greater than 0");
         require(
             _balances[paymentToken][msg.sender] >= amount,
@@ -536,34 +353,7 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
         _unpause();
     }
 
-    function _setRoyalties(
-        address lister,
-        address tokenAddr,
-        uint256 tokenId,
-        Royalty memory royalty
-    ) internal whenNotPaused {
-        _royalties[lister][tokenAddr][tokenId] = royalty;
-        emit RoyaltiesSet(
-            msg.sender,
-            tokenAddr,
-            tokenId,
-            royalty.receiver,
-            royalty.royaltyAmount
-        );
-    }
-
-    /**
-     * @dev External view method to check if a ERC20 token is accepted as payment for listings
-     * Requirements:
-     *
-     * - `tokenAddress` must be a valid ERC20 address
-     */
-    function isPaymentToken(address tokenAddress)
-        public
-        view
-        override
-        returns (bool isApproved)
-    {
-        return _isPaymentToken[tokenAddress];
+    function updateAdmin(address newAdmin) public override onlyOwner {
+        admin = IAdmin(newAdmin);
     }
 }

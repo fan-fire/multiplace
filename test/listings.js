@@ -45,12 +45,8 @@ describe("Listing", async () => {
     /                                         /
     /                                         /
     /======================================= */
-    const NFTLib = await ethers.getContractFactory("NFTLib");
-    const nftLib = await NFTLib.deploy();
 
-    const Multiplace = await ethers.getContractFactory("Multiplace", {
-      libraries: { NFTLib: nftLib.address },
-    });
+    const Multiplace = await ethers.getContractFactory("Multiplace");
     multiplace = await Multiplace.deploy();
     await multiplace.deployed();
 

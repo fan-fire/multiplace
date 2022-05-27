@@ -3,13 +3,16 @@ pragma solidity 0.8.5;
 
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "./Storage.sol";
+import "./IListings.sol";
+import "./Listings.sol";
 
 contract MultiplaceProxy is Storage, Proxy {
     event Upgraded(address newAddress);
 
     constructor(address _currentMarketplace) {
         currentMarketplace = _currentMarketplace;
-        protocolWallet = owner();
+        owner = msg.sender;
+        IListings listings = new Listings();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(RESERVER_ROLE, msg.sender);
     }
