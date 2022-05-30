@@ -1,3 +1,5 @@
+const { ethers } = require("hardhat");
+
 const listingToObject = (listing) => {
   return {
     listPtr: listing.listPtr.toNumber(),
@@ -13,6 +15,9 @@ const listingToObject = (listing) => {
   };
 };
 
+const DEFAULT_ADMIN_ROLE = ethers.utils.formatBytes32String(0);
+const ADMIN_ROLE = ethers.utils.solidityKeccak256(["string"], ["ADMIN_ROLE"]);
+
 const NFT_TYPE = {
   ERC721: 0,
   ERC721_2981: 1,
@@ -23,4 +28,6 @@ const NFT_TYPE = {
 module.exports = {
   NFT_TYPE,
   listingToObject,
+  DEFAULT_ADMIN_ROLE,
+  ADMIN_ROLE,
 };

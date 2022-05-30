@@ -6,39 +6,15 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-
-import "./IMultiplace.sol";
 import "./IListings.sol";
+import "./IMultiplace.sol";
+import "./IAdmin.sol";
 
 import "./Storage.sol";
 
 contract Multiplace is IMultiplace, Storage, Pausable {
     constructor() {
-        owner = msg.sender;
-    }
-
-    modifier listed(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId
-    ) {
-        require(
-            listings.isListed(msg.sender, tokenAddr, tokenId),
-            "Token is listed"
-        );
-        _;
-    }
-
-    modifier notListed(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId
-    ) {
-        require(
-            !listings.isListed(msg.sender, tokenAddr, tokenId),
-            "Token not listed"
-        );
-        _;
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     function list(
@@ -47,13 +23,12 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         uint256 amount,
         uint256 unitPrice,
         address paymentToken
-    )
-        external
-        override
-        whenNotPaused
-        notListed(msg.sender, tokenAddr, tokenId)
-    {
+    ) external override whenNotPaused {
         // check passed variable values
+        require(
+            !listings.isListed(msg.sender, tokenAddr, tokenId),
+            "Token already listed"
+        );
         require(admin.isPaymentToken(paymentToken), "Invalid payment token");
         listings.list(
             msg.sender,
@@ -64,17 +39,17 @@ contract Multiplace is IMultiplace, Storage, Pausable {
             paymentToken
         );
 
-        IListings.Listing memory listing = listings.getListing(
-            msg.sender,
-            tokenAddr,
-            tokenId
-        );
+        // IListings.Listing memory listing = listings.getListing(
+        //     msg.sender,
+        //     tokenAddr,
+        //     tokenId
+        // );
 
-        IListings.Royalty memory royalty = listings.getRoyalties(
-            listing.seller,
-            listing.tokenAddr,
-            listing.tokenId
-        );
+        // IListings.Royalty memory royalty = listings.getRoyalties(
+        //     listing.seller,
+        //     listing.tokenAddr,
+        //     listing.tokenId
+        // );
 
         // emit Listed(
         //     listing.listPtr,
@@ -235,11 +210,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    )
-        external
-        override
-        returns (address reservedFor, uint256 reservedUntil)
-    {
+    ) external override returns (address reservedFor, uint256 reservedUntil) {
         return (listings.getReservedState(seller, tokenAddr, tokenId));
     }
 
@@ -255,13 +226,11 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    )
-        external
-        view
-        override
-        listed(seller, tokenAddr, tokenId)
-        returns (uint256 listPtr)
-    {
+    ) external view override returns (uint256 listPtr) {
+        require(
+            listings.isListed(msg.sender, tokenAddr, tokenId),
+            "Token not listed"
+        );
         return listings.getListingPointer(seller, tokenAddr, tokenId);
     }
 
@@ -287,13 +256,11 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    )
-        public
-        view
-        override
-        listed(seller, tokenAddr, tokenId)
-        returns (IListings.Listing memory listing)
-    {
+    ) public view override returns (IListings.Listing memory listing) {
+        require(
+            listings.isListed(msg.sender, tokenAddr, tokenId),
+            "Token not listed"
+        );
         return listings.getListing(seller, tokenAddr, tokenId);
     }
 
@@ -303,6 +270,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         override
         returns (IListings.Listing[] memory)
     {
+        // return new IListings.Listing[](0);
         return listings.getAllListings();
     }
 
@@ -341,7 +309,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
      * @dev Method to pause the marketplace.
      *
      */
-    function pause() public onlyOwner {
+    function pause() public onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
@@ -349,11 +317,37 @@ contract Multiplace is IMultiplace, Storage, Pausable {
      * @dev Method to unpause the marketplace.
      *
      */
-    function unpause() public onlyOwner {
+    function unpause() public onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
-    function updateAdmin(address newAdmin) public override onlyOwner {
+    function updateAdmin(address newAdmin)
+        public
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         admin = IAdmin(newAdmin);
+    }
+
+    function addPaymentToken(address paymentToken)
+        public
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        require(
+            !admin.isPaymentToken(paymentToken),
+            "Payment token already added"
+        );
+        admin.addPaymentToken(paymentToken);
+    }
+
+    function isPaymentToken(address paymentToken)
+        public
+        view
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        returns (bool)
+    {
+        return admin.isPaymentToken(paymentToken);
     }
 }

@@ -130,4 +130,8 @@ interface IMultiplace is IERC165 {
     function pullFunds(address paymentToken, uint256 amount) external;
 
     function updateAdmin(address newAdmin) external;
+
+    function addPaymentToken(address paymentToken) external;
+
+    function isPaymentToken(address paymentToken) external view returns (bool);
 }

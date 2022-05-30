@@ -48,7 +48,7 @@ interface IListings {
         address tokenAddr,
         uint256 tokenId,
         uint256 amount
-    ) external returns(bool) ;
+    ) external returns (bool);
 
     function status(
         address seller,
@@ -101,7 +101,6 @@ interface IListings {
         uint256 tokenId
     ) external returns (Royalty memory royalty);
 
-
     function reserve(
         address tokenAddr,
         uint256 tokenId,
@@ -109,12 +108,9 @@ interface IListings {
         address reservee
     ) external;
 
-        function getReservedState(
+    function getReservedState(
         address seller,
         address tokenAddr,
         uint256 tokenId
-    )
-        external
-        returns (address reservedFor, uint256 reservedUntil);
-
+    ) external returns (address reservedFor, uint256 reservedUntil);
 }

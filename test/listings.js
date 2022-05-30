@@ -21,6 +21,7 @@ describe("Listing", async () => {
   let acc3;
 
   let multiplace;
+  let multiplaceProxy;
   let erc1155Mock;
   let erc721Mock;
   let erc20Mock;
@@ -49,6 +50,12 @@ describe("Listing", async () => {
     const Multiplace = await ethers.getContractFactory("Multiplace");
     multiplace = await Multiplace.deploy();
     await multiplace.deployed();
+
+    const MultiplaceProxy = await ethers.getContractFactory("MultiplaceProxy");
+    multiplaceProxy = await MultiplaceProxy.deploy(multiplace.address);
+    await multiplaceProxy.deployed();
+
+    multiplace = Multiplace.attach(multiplaceProxy.address);
 
     /* =======================================/
     /                                         /

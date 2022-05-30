@@ -7,9 +7,11 @@ contract Admin is IAdmin, AccessControl {
     mapping(address => bool) internal _isPaymentToken; //Whether a given ERC20 contract is an excepted payment token
     uint256 internal _protocolFeeNumerator = 25000000; //Numerator of the protocol fee
     uint256 internal _protocolFeeDenominator = 1000000000; //Denominator of the protocol fee
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(ADMIN_ROLE, msg.sender);
     }
 
     function protocolWallet() public view override returns (address) {
@@ -27,7 +29,7 @@ contract Admin is IAdmin, AccessControl {
     function changeProtocolWallet(address newProtocolWallet)
         external
         override
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyRole(ADMIN_ROLE)
     {
         require(newProtocolWallet != address(0), "0x00 not allowed");
         _protocolWallet = newProtocolWallet;
@@ -37,7 +39,7 @@ contract Admin is IAdmin, AccessControl {
     function changeProtocolFee(uint256 feeNumerator, uint256 feeDenominator)
         external
         override
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyRole(ADMIN_ROLE)
     {
         require(feeDenominator != 0, "denominator cannot be 0");
         _protocolFeeNumerator = feeNumerator;
@@ -47,6 +49,7 @@ contract Admin is IAdmin, AccessControl {
 
     function isPaymentToken(address paymentToken)
         public
+        view
         override
         returns (bool)
     {
@@ -56,7 +59,7 @@ contract Admin is IAdmin, AccessControl {
     function addPaymentToken(address paymentToken)
         external
         override
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyRole(ADMIN_ROLE)
     {
         // check if payment token is in isPaymentToken
         require(!isPaymentToken(paymentToken), "Payment token already added");

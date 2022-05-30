@@ -12,7 +12,7 @@ interface IAdmin {
 
     function addPaymentToken(address paymentToken) external;
 
-    function isPaymentToken(address paymentToken) external returns (bool);
+    function isPaymentToken(address paymentToken) external view returns (bool);
 
     function protocolFeeNumerator() external view returns (uint256);
 

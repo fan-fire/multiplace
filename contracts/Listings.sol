@@ -3,13 +3,14 @@ pragma solidity 0.8.5;
 import "@openzeppelin/contracts/interfaces/IERC721.sol";
 import "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
+import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import "./IListings.sol";
-import "./NFTLib.sol";
 
 contract Listings is IListings {
-    using NFTLib for address;
+    using ERC165Checker for address;
 
     address public owner;
+    address public multiplace;
     uint256 public numListings; //Number of listings in the marketplace
     Listing[] internal _listings; //Listings of the marketplace
 
@@ -53,26 +54,20 @@ contract Listings is IListings {
         _;
     }
 
-    modifier listed(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId
-    ) {
-        require(isListed(msg.sender, tokenAddr, tokenId), "Token is listed");
-        _;
-    }
-
-    modifier notListed(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId
-    ) {
-        require(!isListed(msg.sender, tokenAddr, tokenId), "Token not listed");
+    modifier onlyMultiplace() {
+        require(
+            msg.sender == multiplace,
+            "Only multiplace can call this function"
+        );
         _;
     }
 
     constructor() {
         owner = msg.sender;
+    }
+
+    function setMultiplace(address _multiplace) public onlyOwner {
+        multiplace = _multiplace;
     }
 
     function list(
@@ -82,7 +77,7 @@ contract Listings is IListings {
         uint256 amount,
         uint256 unitPrice,
         address paymentToken
-    ) external override onlyOwner {
+    ) external override onlyMultiplace {
         // check passed variable values
         require(amount > 0, "Invalid amount");
         require(unitPrice > 0, "Invalid price");
@@ -91,7 +86,7 @@ contract Listings is IListings {
         _isListed[lister][tokenAddr][tokenId] = true;
 
         // check that we've got a valid 721 or 1155, either with, or without 2981
-        NFT_TYPE _nftType = tokenAddr.getType();
+        NFT_TYPE _nftType = getType(tokenAddr);
         require(_nftType != NFT_TYPE.UNKNOWN, "NFT type unknown");
 
         // check if sender owns NFT-tokenId
@@ -102,7 +97,7 @@ contract Listings is IListings {
                 "Sender not owner of amount"
             );
             require(
-                IERC1155(tokenAddr).isApprovedForAll(lister, address(this)),
+                IERC1155(tokenAddr).isApprovedForAll(lister, multiplace),
                 "Not approved for ERC1155"
             );
         }
@@ -113,7 +108,7 @@ contract Listings is IListings {
                 "Sender not owner"
             );
             require(
-                IERC721(tokenAddr).isApprovedForAll(lister, address(this)),
+                IERC721(tokenAddr).isApprovedForAll(lister, multiplace),
                 "Not approved for ERC721"
             );
         }
@@ -177,7 +172,7 @@ contract Listings is IListings {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) public override onlyOwner {
+    ) public override onlyMultiplace {
         Listing memory listing = getListing(seller, tokenAddr, tokenId);
         // check reserving
         require(block.timestamp >= listing.reservedUntil, "NFT reserved");
@@ -190,7 +185,7 @@ contract Listings is IListings {
         address tokenAddr,
         uint256 tokenId,
         uint256 amount
-    ) public override onlyOwner returns(bool) {
+    ) public override onlyMultiplace returns (bool) {
         Listing memory listing = getListing(seller, tokenAddr, tokenId);
         // check reserving
         require(block.timestamp >= listing.reservedUntil, "NFT reserved");
@@ -239,7 +234,7 @@ contract Listings is IListings {
 
     function _unlist(Listing memory listingToRemove)
         internal
-        onlyOwner
+        onlyMultiplace
         returns (bool)
     {
         uint256 listPtrToRemove = listingToRemove.listPtr;
@@ -291,7 +286,7 @@ contract Listings is IListings {
                 listing.seller;
             isTokenStillApproved = IERC721(listing.tokenAddr).isApprovedForAll(
                 listing.seller,
-                address(this)
+                multiplace
             );
         } else if (
             listing.nftType == NFT_TYPE.ERC1155 ||
@@ -305,7 +300,7 @@ contract Listings is IListings {
                 listing.amount;
             isTokenStillApproved = IERC1155(listing.tokenAddr).isApprovedForAll(
                     listing.seller,
-                    address(this)
+                    multiplace
                 );
         }
 
@@ -324,13 +319,8 @@ contract Listings is IListings {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    )
-        external
-        view
-        override
-        listed(seller, tokenAddr, tokenId)
-        returns (uint256 listPtr)
-    {
+    ) external view override returns (uint256 listPtr) {
+        require(isListed(msg.sender, tokenAddr, tokenId), "Token not listed");
         return _token2Ptr[seller][tokenAddr][tokenId];
     }
 
@@ -356,13 +346,8 @@ contract Listings is IListings {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    )
-        public
-        view
-        override
-        listed(seller, tokenAddr, tokenId)
-        returns (Listing memory listing)
-    {
+    ) public view override returns (Listing memory listing) {
+        require(isListed(msg.sender, tokenAddr, tokenId), "Token is listed");
         return _listings[_token2Ptr[seller][tokenAddr][tokenId]];
     }
 
@@ -389,9 +374,10 @@ contract Listings is IListings {
         uint256 period,
         address reservee
     ) external override {
-        uint a = 3;
+        uint256 a = 3;
     }
-        function getReservedState(
+
+    function getReservedState(
         address seller,
         address tokenAddr,
         uint256 tokenId
@@ -403,5 +389,30 @@ contract Listings is IListings {
     {
         reservedFor = address(0);
         reservedUntil = 0;
+    }
+
+    function getType(address tokenAddr) public returns (NFT_TYPE tokenType) {
+        require(tokenAddr.supportsERC165(), "NFT not ERC165");
+
+        bool isERC721 = tokenAddr.supportsInterface(type(IERC721).interfaceId);
+        bool isERC1155 = tokenAddr.supportsInterface(
+            type(IERC1155).interfaceId
+        );
+        bool isERC2981 = tokenAddr.supportsInterface(
+            type(IERC2981).interfaceId
+        );
+
+        // get NFT type, one of ERC721, ERC1155, ERC721_2981, ERC1155_2981
+        if (isERC1155 && !isERC2981) {
+            tokenType = NFT_TYPE.ERC1155;
+        } else if (isERC721 && !isERC2981) {
+            tokenType = NFT_TYPE.ERC721;
+        } else if (isERC1155 && isERC2981) {
+            tokenType = NFT_TYPE.ERC1155_2981;
+        } else if (isERC721 && isERC2981) {
+            tokenType = NFT_TYPE.ERC721_2981;
+        } else {
+            tokenType = NFT_TYPE.UNKNOWN;
+        }
     }
 }
