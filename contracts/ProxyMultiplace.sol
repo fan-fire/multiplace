@@ -5,18 +5,16 @@ import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.so
 import "./Storage.sol";
 import "./IListings.sol";
 import "./IAdmin.sol";
+import "./Listings.sol";
+import "./Admin.sol";
 
 contract MultiplaceProxy is Storage, Proxy {
     event Upgraded(address newAddress);
 
-    constructor(
-        address _currentMarketplace,
-        address _listings,
-        address _admin
-    ) {
+    constructor(address _currentMarketplace) {
         currentMarketplace = _currentMarketplace;
-        admin = IAdmin(_admin);
-        listings = IListings(_listings);
+        admin = new Admin();
+        listings = new Listings();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(RESERVER_ROLE, msg.sender);
     }

@@ -10,7 +10,6 @@ contract Listings is IListings {
     using ERC165Checker for address;
 
     address public owner;
-    address public multiplace;
     uint256 public numListings; //Number of listings in the marketplace
     Listing[] internal _listings; //Listings of the marketplace
 
@@ -54,20 +53,8 @@ contract Listings is IListings {
         _;
     }
 
-    modifier onlyMultiplace() {
-        require(
-            msg.sender == multiplace,
-            "Only multiplace can call this function"
-        );
-        _;
-    }
-
     constructor() {
         owner = msg.sender;
-    }
-
-    function setMultiplace(address _multiplace) public onlyOwner {
-        multiplace = _multiplace;
     }
 
     function list(
@@ -77,7 +64,7 @@ contract Listings is IListings {
         uint256 amount,
         uint256 unitPrice,
         address paymentToken
-    ) external override onlyMultiplace {
+    ) external override onlyOwner {
         // check passed variable values
         require(amount > 0, "Invalid amount");
         require(unitPrice > 0, "Invalid price");
@@ -97,7 +84,7 @@ contract Listings is IListings {
                 "Sender not owner of amount"
             );
             require(
-                IERC1155(tokenAddr).isApprovedForAll(lister, multiplace),
+                IERC1155(tokenAddr).isApprovedForAll(lister, owner),
                 "Not approved for ERC1155"
             );
         }
@@ -108,7 +95,7 @@ contract Listings is IListings {
                 "Sender not owner"
             );
             require(
-                IERC721(tokenAddr).isApprovedForAll(lister, multiplace),
+                IERC721(tokenAddr).isApprovedForAll(lister, owner),
                 "Not approved for ERC721"
             );
         }
@@ -172,7 +159,7 @@ contract Listings is IListings {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) public override onlyMultiplace {
+    ) public override onlyOwner {
         Listing memory listing = getListing(seller, tokenAddr, tokenId);
         // check reserving
         require(block.timestamp >= listing.reservedUntil, "NFT reserved");
@@ -185,7 +172,7 @@ contract Listings is IListings {
         address tokenAddr,
         uint256 tokenId,
         uint256 amount
-    ) public override onlyMultiplace returns (bool) {
+    ) public override onlyOwner returns (bool) {
         Listing memory listing = getListing(seller, tokenAddr, tokenId);
         // check reserving
         require(block.timestamp >= listing.reservedUntil, "NFT reserved");
@@ -234,7 +221,7 @@ contract Listings is IListings {
 
     function _unlist(Listing memory listingToRemove)
         internal
-        onlyMultiplace
+        onlyOwner
         returns (bool)
     {
         uint256 listPtrToRemove = listingToRemove.listPtr;
@@ -286,7 +273,7 @@ contract Listings is IListings {
                 listing.seller;
             isTokenStillApproved = IERC721(listing.tokenAddr).isApprovedForAll(
                 listing.seller,
-                multiplace
+                owner
             );
         } else if (
             listing.nftType == NFT_TYPE.ERC1155 ||
@@ -300,7 +287,7 @@ contract Listings is IListings {
                 listing.amount;
             isTokenStillApproved = IERC1155(listing.tokenAddr).isApprovedForAll(
                     listing.seller,
-                    multiplace
+                    owner
                 );
         }
 

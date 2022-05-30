@@ -34,8 +34,8 @@ describe("Architecture", async () => {
     let admin = await Admin.deploy();
     await admin.deployed();
 
-    let hasAdmin = await admin.hasRole(DEFAULT_ADMIN_ROLE, owner.address);
-    expect(hasAdmin).to.equal(true);
+    let adminOwner = await admin.owner();
+    expect(adminOwner).to.equal(owner.address);
   });
 
   it("Can deploy multiplace", async () => {
@@ -52,24 +52,12 @@ describe("Architecture", async () => {
   it("Can deploy proxy", async () => {
     let [owner] = await ethers.getSigners();
 
-    const Listings = await ethers.getContractFactory("Listings");
-    let listings = await Listings.deploy();
-    await listings.deployed();
-
-    const Admin = await ethers.getContractFactory("Admin");
-    let admin = await Admin.deploy();
-    await admin.deployed();
-
     const Multiplace = await ethers.getContractFactory("Multiplace");
     let multiplace = await Multiplace.deploy();
     await multiplace.deployed();
 
     const MultiplaceProxy = await ethers.getContractFactory("MultiplaceProxy");
-    multiplaceProxy = await MultiplaceProxy.deploy(
-      multiplace.address,
-      listings.address,
-      admin.address
-    );
+    multiplaceProxy = await MultiplaceProxy.deploy(multiplace.address);
     await multiplaceProxy.deployed();
 
     let hasAdmin = await multiplaceProxy.hasRole(
@@ -83,24 +71,12 @@ describe("Architecture", async () => {
   });
 
   it("Can get listings from marketplace via proxy", async () => {
-    const Listings = await ethers.getContractFactory("Listings");
-    let listings = await Listings.deploy();
-    await listings.deployed();
-
-    const Admin = await ethers.getContractFactory("Admin");
-    let admin = await Admin.deploy();
-    await admin.deployed();
-
     const Multiplace = await ethers.getContractFactory("Multiplace");
     let multiplace = await Multiplace.deploy();
     await multiplace.deployed();
 
     const MultiplaceProxy = await ethers.getContractFactory("MultiplaceProxy");
-    multiplaceProxy = await MultiplaceProxy.deploy(
-      multiplace.address,
-      listings.address,
-      admin.address
-    );
+    multiplaceProxy = await MultiplaceProxy.deploy(multiplace.address);
     await multiplaceProxy.deployed();
 
     multiplace = await Multiplace.attach(multiplaceProxy.address);
@@ -115,24 +91,12 @@ describe("Architecture", async () => {
   it("Can add paymentToken via proxy", async () => {
     let [owner] = await ethers.getSigners();
 
-    const Listings = await ethers.getContractFactory("Listings");
-    let listings = await Listings.deploy();
-    await listings.deployed();
-
-    const Admin = await ethers.getContractFactory("Admin");
-    let admin = await Admin.deploy();
-    await admin.deployed();
-
     const Multiplace = await ethers.getContractFactory("Multiplace");
     let multiplace = await Multiplace.deploy();
     await multiplace.deployed();
 
     const MultiplaceProxy = await ethers.getContractFactory("MultiplaceProxy");
-    multiplaceProxy = await MultiplaceProxy.deploy(
-      multiplace.address,
-      listings.address,
-      admin.address
-    );
+    multiplaceProxy = await MultiplaceProxy.deploy(multiplace.address);
     await multiplaceProxy.deployed();
 
     multiplace = await Multiplace.attach(multiplaceProxy.address);
@@ -141,11 +105,7 @@ describe("Architecture", async () => {
     let paymentToken = await ERC20Mock.deploy();
     await paymentToken.deployed();
 
-    await admin.connect(owner).grantRole(ADMIN_ROLE, multiplace.address);
     await multiplace.connect(owner).addPaymentToken(paymentToken.address);
-
-    let isPaymentTokenAdmin = await admin.isPaymentToken(paymentToken.address);
-    expect(isPaymentTokenAdmin).to.be.true;
 
     let isPaymentToken = await multiplace.isPaymentToken(paymentToken.address);
     expect(isPaymentToken).to.be.true;
@@ -154,24 +114,12 @@ describe("Architecture", async () => {
   it("Can list a token via proxy", async () => {
     let [owner, lister] = await ethers.getSigners();
 
-    const Listings = await ethers.getContractFactory("Listings");
-    let listings = await Listings.deploy();
-    await listings.deployed();
-
-    const Admin = await ethers.getContractFactory("Admin");
-    let admin = await Admin.deploy();
-    await admin.deployed();
-
     const Multiplace = await ethers.getContractFactory("Multiplace");
     let multiplace = await Multiplace.deploy();
     await multiplace.deployed();
 
     const MultiplaceProxy = await ethers.getContractFactory("MultiplaceProxy");
-    multiplaceProxy = await MultiplaceProxy.deploy(
-      multiplace.address,
-      listings.address,
-      admin.address
-    );
+    multiplaceProxy = await MultiplaceProxy.deploy(multiplace.address);
     await multiplaceProxy.deployed();
 
     const ERC20Mock = await ethers.getContractFactory("ERC20Mock");
@@ -180,8 +128,6 @@ describe("Architecture", async () => {
 
     multiplace = await Multiplace.attach(multiplaceProxy.address);
 
-    await admin.connect(owner).grantRole(ADMIN_ROLE, multiplace.address);
-    await listings.connect(owner).setMultiplace(multiplace.address);
     await multiplace.connect(owner).addPaymentToken(erc20Mock.address);
 
     let tokenId;
