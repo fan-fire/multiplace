@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "./IListings.sol";
 import "./IMultiplace.sol";
 import "./IAdmin.sol";
@@ -352,5 +353,16 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         uint256 tokenId
     ) public view override returns (IListings.Royalty memory royalty) {
         return listings.getRoyalties(seller, tokenAddr, tokenId);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(IERC165, AccessControl)
+        returns (bool)
+    {
+        return interfaceId == type(IMultiplace).interfaceId ||
+        interfaceId == type(IAccessControl).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 }

@@ -1,6 +1,7 @@
 pragma solidity 0.8.5;
+import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-interface IAdmin {
+interface IAdmin is IERC165 {
     event ProtocolWalletChanged(address newProtocolWallet);
     event ProtocolFeeChanged(uint256 feeNumerator, uint256 feeDenominator);
     event PaymentTokenAdded(address indexed paymentToken);

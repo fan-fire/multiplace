@@ -67,4 +67,13 @@ contract Admin is IAdmin {
         _isPaymentToken[paymentToken] = true;
         emit PaymentTokenAdded(paymentToken);
     }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override
+        returns (bool)
+    {
+        return (interfaceId == type(IAdmin).interfaceId);
+    }
 }
