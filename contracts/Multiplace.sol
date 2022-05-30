@@ -67,8 +67,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         uint256 tokenId,
         uint256 amount
     ) external override {
-        listings.buy(msg.sender, seller, tokenAddr, tokenId, amount);
-
         IListings.Listing memory listing = listings.getListing(
             seller,
             tokenAddr,
@@ -87,7 +85,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         require(
             //  allowance(address owner, address spender)
             IERC20(paymentToken).allowance(msg.sender, address(this)) >= price,
-            "Not approved ERC20"
+            "Not approved for enough ERC20"
         );
 
         // get royalties from mapping
@@ -272,6 +270,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
 
     function getBalance(address paymentToken, address account)
         external
+        view
         override
         returns (uint256 balance)
     {
@@ -361,8 +360,9 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         override(IERC165, AccessControl)
         returns (bool)
     {
-        return interfaceId == type(IMultiplace).interfaceId ||
-        interfaceId == type(IAccessControl).interfaceId ||
+        return
+            interfaceId == type(IMultiplace).interfaceId ||
+            interfaceId == type(IAccessControl).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 }

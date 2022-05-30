@@ -162,7 +162,7 @@ describe("Architecture", async () => {
         tokenAddr: erc1155Mock.address,
         tokenId: tokenId,
         seller: lister.address,
-        unitPrice: unitPrice,
+        unitPrice: unitPrice.toString(),
         amount: amount,
         paymentToken: paymentToken,
         nftType: NFT_TYPE.ERC1155,

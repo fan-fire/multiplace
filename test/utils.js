@@ -6,7 +6,7 @@ const listingToObject = (listing) => {
     tokenAddr: listing.tokenAddr,
     tokenId: listing.tokenId.toNumber(),
     seller: listing.seller,
-    unitPrice: listing.unitPrice.toNumber(),
+    unitPrice: listing.unitPrice.toString(),
     amount: listing.amount.toNumber(),
     paymentToken: listing.paymentToken,
     nftType: listing.nftType,
