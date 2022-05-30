@@ -1344,38 +1344,34 @@ describe("Listing", async () => {
     await multiplace
       .connect(lister)
       .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
-     let listings = await multiplace.getAllListings();
-      listings = listings.map(listingToObject);
-  
-      let expectedListings = [
-        {
-          listPtr: 0,
-          tokenAddr: erc721Mock.address,
-          tokenId: 1,
-          seller: lister.address,
-          unitPrice: unitPrice,
-          amount: amount,
-          paymentToken: paymentToken,
-          nftType: NFT_TYPE.ERC721,
-          reservedUntil: 0,
-          reservedFor: constants.ZERO_ADDRESS,
-        },
-      ];
-  
-      expect(listings).to.be.deep.equal(expectedListings);
+    let listings = await multiplace.getAllListings();
+    listings = listings.map(listingToObject);
 
-      console.log(listings);
-      console.log(`lister: ${lister.address}`);
-      console.log(`notLister: ${notLister.address}`);
+    let expectedListings = [
+      {
+        listPtr: 0,
+        tokenAddr: erc721Mock.address,
+        tokenId: 1,
+        seller: lister.address,
+        unitPrice: unitPrice,
+        amount: amount,
+        paymentToken: paymentToken,
+        nftType: NFT_TYPE.ERC721,
+        reservedUntil: 0,
+        reservedFor: constants.ZERO_ADDRESS,
+      },
+    ];
+
+    expect(listings).to.be.deep.equal(expectedListings);
 
     await expect(
       multiplace.connect(notLister).unlist(tokenAddr, tokenId)
-    ).to.be.revertedWith("NFT not listed for sender");
+    ).to.be.revertedWith("Token not listed");
 
-     listings = await multiplace.getAllListings();
+    listings = await multiplace.getAllListings();
     listings = listings.map(listingToObject);
 
-     expectedListings = [
+    expectedListings = [
       {
         listPtr: 0,
         tokenAddr: erc721Mock.address,
@@ -1410,7 +1406,7 @@ describe("Listing", async () => {
 
     await expect(
       multiplace.connect(notLister).unlist(tokenAddr, tokenId)
-    ).to.be.revertedWith("NFT not listed for sender");
+    ).to.be.revertedWith("Token not listed");
 
     let listings = await multiplace.getAllListings();
     listings = listings.map(listingToObject);
@@ -1438,14 +1434,14 @@ describe("Listing", async () => {
     let tokenId = 1;
     await expect(
       multiplace.connect(notLister).unlist(tokenAddr, tokenId)
-    ).to.be.revertedWith("NFT not listed for sender");
+    ).to.be.revertedWith("Token not listed");
   });
   it("Can't unlist if the 1155 token is not listed", async () => {
     let tokenAddr = erc1155Mock.address;
     let tokenId = 1;
     await expect(
       multiplace.connect(notLister).unlist(tokenAddr, tokenId)
-    ).to.be.revertedWith("NFT not listed for sender");
+    ).to.be.revertedWith("Token not listed");
   });
 
   it("lister can list 5 tokenId 1s then another 5 tokenId 1s (making 10) if the first 5 are unlisted first", async () => {

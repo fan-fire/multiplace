@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import "./IListings.sol";
-import "hardhat/console.sol";
 
 contract Listings is IListings {
     using ERC165Checker for address;
@@ -124,10 +123,12 @@ contract Listings is IListings {
         numListings = numListings + 1;
 
         // if nft supports ERC2981, create Royalties for tokenAddr/tokenId and set artist=receiver
+        //    else check if ERC721 or ERC1155 has owner(), if yes set artist=recever
+        //    else set artist=0x00
         Royalty memory royalty = Royalty(address(0), 0);
         if (
-            _nftType == NFT_TYPE.ERC721_2981 ||
-            _nftType == NFT_TYPE.ERC1155_2981
+            _nftType == NFT_TYPE.ERC1155_2981 ||
+            _nftType == NFT_TYPE.ERC721_2981
         ) {
             address receiver;
             uint256 royaltyAmount;
@@ -136,6 +137,21 @@ contract Listings is IListings {
                 unitPrice
             );
             royalty = Royalty(receiver, royaltyAmount);
+        } else {
+            bytes memory data = abi.encodeWithSignature("owner()");
+            (bool success, bytes memory returnData) = tokenAddr.call{value: 0}(
+                data
+            );
+
+            // if nft has owner(), set it as royalty beneficiary
+            if (success) {
+                address returnedAddress;
+
+                returnedAddress = abi.decode(returnData, (address));
+                royalty = Royalty(returnedAddress, 0);
+            } else {
+                royalty = Royalty(address(0), 0);
+            }
         }
         // set royalties mapping
         _royalties[lister][tokenAddr][tokenId] = royalty;
@@ -165,7 +181,6 @@ contract Listings is IListings {
         address tokenAddr,
         uint256 tokenId
     ) public override onlyOwner {
-        console.log("Listings.unlist: %s %s %s", unlister, tokenAddr, tokenId);
         Listing memory listing = getListing(unlister, tokenAddr, tokenId);
         // check reserving
 
@@ -341,14 +356,7 @@ contract Listings is IListings {
         address tokenAddr,
         uint256 tokenId
     ) public view override returns (Listing memory listing) {
-        console.log(
-            "Listings.getListing: %s %s %s",
-            seller,
-            tokenAddr,
-            tokenId
-        );
         require(_isListed[seller][tokenAddr][tokenId], "Token not listed");
-        console.log("isListed: %s", _isListed[seller][tokenAddr][tokenId]);
         return _listings[_token2Ptr[seller][tokenAddr][tokenId]];
     }
 
@@ -365,7 +373,7 @@ contract Listings is IListings {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) public override returns (Royalty memory royalty) {
+    ) public view override returns (Royalty memory royalty) {
         royalty = _royalties[seller][tokenAddr][tokenId];
     }
 

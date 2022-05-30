@@ -99,7 +99,7 @@ interface IListings {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external returns (Royalty memory royalty);
+    ) external view returns (Royalty memory royalty);
 
     function reserve(
         address tokenAddr,

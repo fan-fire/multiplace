@@ -134,4 +134,10 @@ interface IMultiplace is IERC165 {
     function addPaymentToken(address paymentToken) external;
 
     function isPaymentToken(address paymentToken) external view returns (bool);
+
+    function getRoyalties(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external view returns (IListings.Royalty memory royalty);
 }

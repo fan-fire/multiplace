@@ -10,7 +10,6 @@ import "./IListings.sol";
 import "./IMultiplace.sol";
 import "./IAdmin.sol";
 import "./Storage.sol";
-import "hardhat/console.sol";
 
 contract Multiplace is IMultiplace, Storage, Pausable {
     constructor() {
@@ -215,8 +214,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         override
         whenNotPaused
     {
-        console.log("Multiplace.unlist %s %s", tokenAddr, tokenId);
-        console.log("msg.sender : %s", msg.sender);
         listings.unlist(msg.sender, tokenAddr, tokenId);
     }
 
@@ -347,5 +344,13 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         returns (bool)
     {
         return admin.isPaymentToken(paymentToken);
+    }
+
+    function getRoyalties(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) public view override returns (IListings.Royalty memory royalty) {
+        return listings.getRoyalties(seller, tokenAddr, tokenId);
     }
 }
