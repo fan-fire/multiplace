@@ -37,7 +37,7 @@ interface IListings {
     ) external;
 
     function unlist(
-        address seller,
+        address unlister,
         address tokenAddr,
         uint256 tokenId
     ) external;

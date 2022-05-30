@@ -3,8 +3,6 @@ pragma solidity 0.8.5;
 
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "./Storage.sol";
-import "./IListings.sol";
-import "./IAdmin.sol";
 import "./Listings.sol";
 import "./Admin.sol";
 

@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import "./IListings.sol";
+import "hardhat/console.sol";
 
 contract Listings is IListings {
     using ERC165Checker for address;
@@ -66,6 +67,10 @@ contract Listings is IListings {
         address paymentToken
     ) external override onlyOwner {
         // check passed variable values
+        require(
+            !_isListed[lister][tokenAddr][tokenId],
+            "NFT already listed by sender"
+        );
         require(amount > 0, "Invalid amount");
         require(unitPrice > 0, "Invalid price");
 
@@ -85,7 +90,7 @@ contract Listings is IListings {
             );
             require(
                 IERC1155(tokenAddr).isApprovedForAll(lister, owner),
-                "Not approved for ERC1155"
+                "Marketplace not approved for ERC1155"
             );
         }
         if (_nftType == NFT_TYPE.ERC721 || _nftType == NFT_TYPE.ERC721_2981) {
@@ -96,7 +101,7 @@ contract Listings is IListings {
             );
             require(
                 IERC721(tokenAddr).isApprovedForAll(lister, owner),
-                "Not approved for ERC721"
+                "Marketplace not approved for ERC721"
             );
         }
 
@@ -156,12 +161,14 @@ contract Listings is IListings {
     }
 
     function unlist(
-        address seller,
+        address unlister,
         address tokenAddr,
         uint256 tokenId
     ) public override onlyOwner {
-        Listing memory listing = getListing(seller, tokenAddr, tokenId);
+        console.log("Listings.unlist: %s %s %s", unlister, tokenAddr, tokenId);
+        Listing memory listing = getListing(unlister, tokenAddr, tokenId);
         // check reserving
+
         require(block.timestamp >= listing.reservedUntil, "NFT reserved");
         assert(_unlist(listing));
     }
@@ -334,7 +341,14 @@ contract Listings is IListings {
         address tokenAddr,
         uint256 tokenId
     ) public view override returns (Listing memory listing) {
-        require(isListed(msg.sender, tokenAddr, tokenId), "Token is listed");
+        console.log(
+            "Listings.getListing: %s %s %s",
+            seller,
+            tokenAddr,
+            tokenId
+        );
+        require(_isListed[seller][tokenAddr][tokenId], "Token not listed");
+        console.log("isListed: %s", _isListed[seller][tokenAddr][tokenId]);
         return _listings[_token2Ptr[seller][tokenAddr][tokenId]];
     }
 

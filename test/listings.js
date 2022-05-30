@@ -1344,15 +1344,38 @@ describe("Listing", async () => {
     await multiplace
       .connect(lister)
       .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+     let listings = await multiplace.getAllListings();
+      listings = listings.map(listingToObject);
+  
+      let expectedListings = [
+        {
+          listPtr: 0,
+          tokenAddr: erc721Mock.address,
+          tokenId: 1,
+          seller: lister.address,
+          unitPrice: unitPrice,
+          amount: amount,
+          paymentToken: paymentToken,
+          nftType: NFT_TYPE.ERC721,
+          reservedUntil: 0,
+          reservedFor: constants.ZERO_ADDRESS,
+        },
+      ];
+  
+      expect(listings).to.be.deep.equal(expectedListings);
+
+      console.log(listings);
+      console.log(`lister: ${lister.address}`);
+      console.log(`notLister: ${notLister.address}`);
 
     await expect(
       multiplace.connect(notLister).unlist(tokenAddr, tokenId)
     ).to.be.revertedWith("NFT not listed for sender");
 
-    let listings = await multiplace.getAllListings();
+     listings = await multiplace.getAllListings();
     listings = listings.map(listingToObject);
 
-    let expectedListings = [
+     expectedListings = [
       {
         listPtr: 0,
         tokenAddr: erc721Mock.address,

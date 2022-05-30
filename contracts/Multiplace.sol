@@ -9,8 +9,8 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "./IListings.sol";
 import "./IMultiplace.sol";
 import "./IAdmin.sol";
-
 import "./Storage.sol";
+import "hardhat/console.sol";
 
 contract Multiplace is IMultiplace, Storage, Pausable {
     constructor() {
@@ -25,10 +25,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         address paymentToken
     ) external override whenNotPaused {
         // check passed variable values
-        require(
-            !listings.isListed(msg.sender, tokenAddr, tokenId),
-            "Token already listed"
-        );
         require(admin.isPaymentToken(paymentToken), "Invalid payment token");
         listings.list(
             msg.sender,
@@ -219,6 +215,8 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         override
         whenNotPaused
     {
+        console.log("Multiplace.unlist %s %s", tokenAddr, tokenId);
+        console.log("msg.sender : %s", msg.sender);
         listings.unlist(msg.sender, tokenAddr, tokenId);
     }
 
