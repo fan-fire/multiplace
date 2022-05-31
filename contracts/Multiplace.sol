@@ -74,7 +74,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         );
 
         // check balance of msg.sender for listed item
-        uint256 price = listing.unitPrice * listing.amount;
+        uint256 price = listing.unitPrice * amount;
         address paymentToken = listing.paymentToken;
 
         require(
@@ -251,10 +251,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         address tokenAddr,
         uint256 tokenId
     ) public view override returns (IListings.Listing memory listing) {
-        require(
-            listings.isListed(msg.sender, tokenAddr, tokenId),
-            "Token not listed"
-        );
         return listings.getListing(seller, tokenAddr, tokenId);
     }
 
@@ -352,6 +348,15 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         uint256 tokenId
     ) public view override returns (IListings.Royalty memory royalty) {
         return listings.getRoyalties(seller, tokenAddr, tokenId);
+    }
+
+    function getListers(address tokenAddr, uint256 tokenId)
+        public
+        view
+        override
+        returns (address[] memory listers)
+    {
+        return listings.getListers(tokenAddr, tokenId);
     }
 
     function supportsInterface(bytes4 interfaceId)

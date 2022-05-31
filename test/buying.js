@@ -4,7 +4,13 @@ const {
   constants, // Common constants, like the zero address and largest integers
 } = require("@openzeppelin/test-helpers");
 
-const { NFT_TYPE, listingToObject } = require("./utils");
+const {
+  NFT_TYPE,
+  listingToObject,
+  PROTOCOL_FEE_DEN,
+  PROTOCOL_FEE_NUM,
+} = require("./utils");
+const ether = require("@openzeppelin/test-helpers/src/ether");
 
 Array.prototype.forEachAsync = async function (fn) {
   for (let t of this) {
@@ -421,6 +427,11 @@ describe("Buying", async (accounts) => {
           reservedFor: constants.ZERO_ADDRESS,
         };
 
+        let listers = await multiplace.getListers(tokenAddr, tokenId);
+
+        expect(listers.length).to.be.equal(1);
+        expect(listers[0]).to.be.equal(seller.address);
+
         expectedListings.push(listingToAdd);
         listPtr += 1;
       }
@@ -440,17 +451,31 @@ describe("Buying", async (accounts) => {
       ethers.utils.parseEther("10").toString()
     );
   });
-  it("can buy ERC721 using ERC20", async () => {
+  it("can buy ERC721", async () => {
     let sellerAddr = seller.address;
     let tokenAddr = erc721Mock.address;
     let tokenId = 2;
-    let amount = 1;
-    let unitPrice = ethers.utils.parseEther("0.2");
-    let buyer1BalanceB4 = await erc20Mock.balanceOf(buyer1.address);
-    let paymentToken = erc20Mock.address;
-    let commision = ethers.utils.parseEther("0.005");
 
-    await erc20Mock.connect(buyer1).approve(multiplace.address, unitPrice);
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let amount = listing.amount;
+    let unitPrice = listing.unitPrice;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+    let buyer1BalanceB4 = await erc20Mock.balanceOf(buyer1.address);
+    let paymentToken = listing.paymentToken;
+    let protocolFee = totalPrice.mul(PROTOCOL_FEE_NUM).div(PROTOCOL_FEE_DEN);
+
+    expect(buyer1BalanceB4.toString()).to.be.equal(
+      ethers.utils.parseEther("10").toString(),
+      "buyer1 should have 10 ether of erc20 before purchase"
+    );
+
+    expect(paymentToken).to.be.equal(
+      erc20Mock.address,
+      "payment token should be erc20"
+    );
+
+    await erc20Mock.connect(buyer1).approve(multiplace.address, totalPrice);
 
     await multiplace
       .connect(buyer1)
@@ -459,35 +484,55 @@ describe("Buying", async (accounts) => {
     let buyer1Balance = await erc20Mock.balanceOf(buyer1.address);
 
     expect(buyer1Balance.toString()).to.be.equal(
-      buyer1BalanceB4.sub(unitPrice).toString()
+      buyer1BalanceB4.sub(totalPrice).toString(),
+      "buyer1 should have 10 ether minus the total price of the purchase"
     );
 
     let ownerOfToken = await erc721Mock.ownerOf(tokenId);
-    expect(ownerOfToken).to.be.equal(buyer1.address);
+    expect(ownerOfToken).to.be.equal(
+      buyer1.address,
+      "token should be owned by buyer1"
+    );
 
     let sellerMarketplaceBalance = await multiplace.getBalance(
       paymentToken,
       sellerAddr
     );
     expect(sellerMarketplaceBalance.toString()).to.be.equal(
-      unitPrice.sub(commision).toString()
+      totalPrice.sub(protocolFee).toString(),
+      "seller should have the correct balance"
     );
 
     let listings = await multiplace.getAllListings();
     listings = listings.map(listingToObject);
+
+    let tokenStillInListings = listings.filter(
+      (listing) =>
+        listing.tokenAddr === tokenAddr &&
+        listing.tokenId === tokenId &&
+        listing.seller === sellerAddr
+    );
+
+    expect(tokenStillInListings.length).to.be.equal(
+      0,
+      "token should not be in listings anymore"
+    );
   });
-  it("can buy ERC1155 using ERC20", async () => {
+  it("can buy full amount ERC1155", async () => {
     let sellerAddr = seller.address;
     let tokenAddr = erc1155Mock.address;
     let tokenId = 2;
-    let amount = 2;
-    let unitPrice = ethers.utils.parseEther("0.2");
-    let buyer1BalanceB4 = await erc20Mock.balanceOf(buyer1.address);
-    let paymentToken = erc20Mock.address;
-    let price = unitPrice.mul(amount);
-    let commision = ethers.utils.parseEther("0.005").mul(2);
 
-    await erc20Mock.connect(buyer1).approve(multiplace.address, price);
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let amount = listing.amount;
+    let unitPrice = listing.unitPrice;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+    let buyer1BalanceB4 = await erc20Mock.balanceOf(buyer1.address);
+    let paymentToken = listing.paymentToken;
+    let protocolFee = totalPrice.mul(PROTOCOL_FEE_NUM).div(PROTOCOL_FEE_DEN);
+
+    await erc20Mock.connect(buyer1).approve(multiplace.address, totalPrice);
 
     await multiplace
       .connect(buyer1)
@@ -496,8 +541,8 @@ describe("Buying", async (accounts) => {
     let buyer1Balance = await erc20Mock.balanceOf(buyer1.address);
 
     expect(buyer1Balance.toString()).to.be.equal(
-      buyer1BalanceB4.sub(unitPrice.mul(amount)).toString(),
-      "buyer1 balance should be reduced by unitPrice"
+      buyer1BalanceB4.sub(totalPrice).toString(),
+      "buyer1 balance should be reduced by totalPrice"
     );
 
     let numberOfTokensBuyer1 = await erc1155Mock.balanceOf(
@@ -514,14 +559,99 @@ describe("Buying", async (accounts) => {
       sellerAddr
     );
     expect(sellerMarketplaceBalance.toString()).to.be.equal(
-      unitPrice.mul(amount).sub(commision).toString(),
-      "seller marketplace balance should be reduced by unitPrice * amount"
+      totalPrice.sub(protocolFee).toString(),
+      "seller marketplace balance should be totalPrice minus protocol fee"
     );
 
     let listings = await multiplace.getAllListings();
     listings = listings.map(listingToObject);
+
+    let isTokenStillInListings = listings.filter(
+      (listing) =>
+        listing.tokenAddr === tokenAddr &&
+        listing.tokenId === tokenId &&
+        listing.seller === sellerAddr
+    );
+
+    expect(isTokenStillInListings.length).to.be.equal(
+      0,
+      "token should not be in listings anymore"
+    );
   });
-  it.skip("can buy ERC721_2981 using ERC20", async () => {});
+
+  it("can buy partial amount ERC1155", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc1155Mock.address;
+    let tokenId = 2;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let amount = listing.amount.sub(1);
+    let unitPrice = listing.unitPrice;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+    let buyer1BalanceB4 = await erc20Mock.balanceOf(buyer1.address);
+    let paymentToken = listing.paymentToken;
+    let protocolFee = totalPrice.mul(PROTOCOL_FEE_NUM).div(PROTOCOL_FEE_DEN);
+
+    await erc20Mock.connect(buyer1).approve(multiplace.address, totalPrice);
+
+    await multiplace
+      .connect(buyer1)
+      .buy(sellerAddr, tokenAddr, tokenId, amount);
+
+    let buyer1Balance = await erc20Mock.balanceOf(buyer1.address);
+
+    expect(buyer1Balance.toString()).to.be.equal(
+      buyer1BalanceB4.sub(totalPrice).toString(),
+      "buyer1 balance should be reduced by totalPrice"
+    );
+
+    let numberOfTokensBuyer1 = await erc1155Mock.balanceOf(
+      buyer1.address,
+      tokenId
+    );
+    expect(numberOfTokensBuyer1.toString()).to.be.equal(
+      amount.toString(),
+      "buyer1 should have 2 tokens"
+    );
+
+    let sellerMarketplaceBalance = await multiplace.getBalance(
+      paymentToken,
+      sellerAddr
+    );
+    expect(sellerMarketplaceBalance.toString()).to.be.equal(
+      totalPrice.sub(protocolFee).toString(),
+      "seller marketplace balance should be totalPrice minus protocol fee"
+    );
+
+    let listings = await multiplace.getAllListings();
+    listings = listings.map(listingToObject);
+
+    let soldTokenInListings = listings.filter(
+      (listing) =>
+        listing.tokenAddr === tokenAddr &&
+        listing.tokenId === tokenId &&
+        listing.seller === sellerAddr
+    );
+
+    expect(soldTokenInListings.length).to.be.equal(
+      1,
+      "token should not be in listings anymore"
+    );
+
+    let soldListing = soldTokenInListings[0];
+
+    expect(soldListing.amount.toString()).to.be.equal(
+      amount.toString(),
+      "amount should be reduced by 1"
+    );
+  });
+
+  it.skip("can buy ERC721_2981", async () => {});
+
+  it.skip("can buy full amount ERC155_2981", async () => {});
+  it.skip("can buy partial amount ERC155_2981", async () => {});
+
   it.skip("should fail if original seller does not own the token anymore and the token is bought for ERC721", async () => {});
   it.skip("should fail if original seller removed approval after listing and token is bought for ERC721", async () => {});
   it.skip("should fail if original seller does not own the token anymore and the token is bought for ERC1155", async () => {});

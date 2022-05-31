@@ -140,4 +140,9 @@ interface IMultiplace is IERC165 {
         address tokenAddr,
         uint256 tokenId
     ) external view returns (IListings.Royalty memory royalty);
+
+    function getListers(address tokenAddr, uint256 tokenId)
+        external
+        view
+        returns (address[] memory listers);
 }

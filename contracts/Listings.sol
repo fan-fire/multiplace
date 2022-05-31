@@ -19,6 +19,9 @@ contract Listings is IListings {
         internal _token2Ptr; //Mapping from lister.tokenAddr.tokenId -> listPtr to quickly lookup the listing given lister.tokenAddr.tokenId
     mapping(address => mapping(address => mapping(uint256 => Royalty)))
         internal _royalties; //Royalties of each lister.tokenAddr.tokenId pair
+    mapping(address => mapping(uint256 => address[])) internal _listers; //Mapping from tokenAddr.tokenId -> array of addresses currently listing
+    mapping(address => mapping(uint256 => mapping(address => uint256)))
+        internal _listersPtr; //Mapping from tokenAddr.tokenId.lister -> listersPtr to be able to pop a lister given the address
 
     event Listed(
         uint256 listPtr,
@@ -75,6 +78,12 @@ contract Listings is IListings {
 
         // update _isListed first to avoid reentrancy
         _isListed[lister][tokenAddr][tokenId] = true;
+
+        // update _listers
+        _listers[tokenAddr][tokenId].push(lister);
+        _listersPtr[tokenAddr][tokenId][lister] =
+            _listers[tokenAddr][tokenId].length -
+            1;
 
         // check that we've got a valid 721 or 1155, either with, or without 2981
         NFT_TYPE _nftType = getType(tokenAddr);
@@ -258,6 +267,18 @@ contract Listings is IListings {
             lastListing.tokenId
         ] = listPtrToRemove;
 
+        // update _listers
+        uint256 listerToRemoveIndx = _listersPtr[listingToRemove.tokenAddr][
+            listingToRemove.tokenId
+        ][listingToRemove.seller];
+        _listers[listingToRemove.tokenAddr][listingToRemove.tokenId][
+            listerToRemoveIndx
+        ] = _listers[listingToRemove.tokenAddr][listingToRemove.tokenId][
+            _listers[listingToRemove.tokenAddr][listingToRemove.tokenId]
+                .length - 1
+        ];
+        _listers[listingToRemove.tokenAddr][listingToRemove.tokenId].pop();
+
         // decrease numListings
         numListings = numListings - 1;
         // !don't remove from royatlies
@@ -322,6 +343,15 @@ contract Listings is IListings {
         uint256 tokenId
     ) external override {
         uint256 a = 4;
+    }
+
+    function getListers(address tokenAddr, uint256 tokenId)
+        public
+        view
+        override
+        returns (address[] memory listers)
+    {
+        return _listers[tokenAddr][tokenId];
     }
 
     function getListingPointer(

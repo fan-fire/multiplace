@@ -114,4 +114,9 @@ interface IListings is IERC165 {
         address tokenAddr,
         uint256 tokenId
     ) external returns (address reservedFor, uint256 reservedUntil);
+
+    function getListers(address tokenAddr, uint256 tokenId)
+        external
+        view
+        returns (address[] memory listers);
 }

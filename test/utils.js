@@ -17,6 +17,8 @@ const listingToObject = (listing) => {
 
 const DEFAULT_ADMIN_ROLE = ethers.utils.formatBytes32String(0);
 const ADMIN_ROLE = ethers.utils.solidityKeccak256(["string"], ["ADMIN_ROLE"]);
+const PROTOCOL_FEE_DEN = ethers.BigNumber.from("10000000000000");
+const PROTOCOL_FEE_NUM = ethers.BigNumber.from("250000000000");
 
 const NFT_TYPE = {
   ERC721: 0,
@@ -30,4 +32,6 @@ module.exports = {
   listingToObject,
   DEFAULT_ADMIN_ROLE,
   ADMIN_ROLE,
+  PROTOCOL_FEE_DEN,
+  PROTOCOL_FEE_NUM,
 };

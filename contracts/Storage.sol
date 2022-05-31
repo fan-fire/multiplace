@@ -12,8 +12,8 @@ abstract contract Storage is AccessControl {
     uint256 public constant MAX_RESERVE_PERIOD = 24 * 60 * 60; /// can only reserve for a max of 1 day
     address public _protocolWallet;
     mapping(address => bool) internal _isPaymentToken; //Whether a given ERC20 contract is an excepted payment token
-    uint256 internal _protocolFeeNumerator = 25000000; //Numerator of the protocol fee
-    uint256 internal _protocolFeeDenominator = 1000000000; //Denominator of the protocol fee
+    uint256 internal _protocolFeeNumerator = 250000000000; //Numerator of the protocol fee
+    uint256 internal _protocolFeeDenominator = 10000000000000; //Denominator of the protocol fee
 
     address public owner;
     IAdmin public admin;
