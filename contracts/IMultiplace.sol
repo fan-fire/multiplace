@@ -130,8 +130,6 @@ interface IMultiplace is IERC165 {
 
     function pullFunds(address paymentToken, uint256 amount) external;
 
-    function updateAdmin(address newAdmin) external;
-
     function addPaymentToken(address paymentToken) external;
 
     function isPaymentToken(address paymentToken) external view returns (bool);
@@ -151,4 +149,15 @@ interface IMultiplace is IERC165 {
         external
         view
         returns (IListings.Listing[] memory listings);
+
+    function changeProtocolWallet(address newProtocolWallet) external;
+
+    function changeProtocolFee(uint256 feeNumerator, uint256 feeDenominator)
+        external;
+
+    function protocolFeeNumerator() external view returns (uint256);
+
+    function protocolFeeDenominator() external view returns (uint256);
+
+    function protocolWallet() external view returns (address);
 }
