@@ -33,7 +33,7 @@ contract ERC1155Mock is ERC1155, Ownable {
 contract ERC1155WithERC2981Mock is ERC1155, IERC2981, Ownable {
     address private _recipient;
 
-    constructor() public ERC1155("") {
+    constructor() ERC1155("") {
         _recipient = owner();
     }
 

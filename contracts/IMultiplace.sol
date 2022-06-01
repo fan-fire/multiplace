@@ -1,39 +1,9 @@
 pragma solidity 0.8.5;
 
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import "./IListings.sol";
 
 interface IMultiplace is IERC165 {
-    enum NFT_TYPE {
-        ERC721,
-        ERC721_2981,
-        ERC1155,
-        ERC1155_2981,
-        UNKNOWN
-    }
-
-    struct Royalty {
-        address receiver;
-        uint256 royaltyAmount;
-    }
-
-    struct Listing {
-        uint256 listPtr; //Pointer to where this listing is located in the listings array
-        address tokenAddr; //Address of the ERC721 or ERC1155 contract of the listed item
-        uint256 tokenId; //token ID of the listed item for tokenAddr
-        address seller; //Address of the seller
-        uint256 unitPrice; //unitPrice of the listed item
-        uint256 amount; //number of tokens in listing
-        address paymentToken; //Address of the ERC20 contract that will be used to pay for the listing
-        NFT_TYPE nftType; //Type of the listed item. Either ERC721 or ERC1155 with or without ERC2981
-        uint256 reservedUntil; //Timestamp when the listing will be reserved
-        address reservedFor; //Address of the buyer who reserved the listing
-    }
-
-    event ProtocolWalletChanged(address newProtocolWallet);
-    event ProtocolFeeChanged(
-        uint256 newProtocolFeeNumerator,
-        uint256 newProtocolFeeDenominator
-    );
     event Listed(
         uint256 listPtr,
         address indexed tokenAddr,
@@ -42,9 +12,9 @@ interface IMultiplace is IERC165 {
         uint256 unitPrice,
         uint256 amount,
         address paymentToken,
-        NFT_TYPE nftType,
+        IListings.NFT_TYPE nftType,
         address royaltyReceiver,
-        uint256 royaltyAmount
+        uint256 unitRoyaltyAmount
     );
     event Bought(
         uint256 listPtr,
@@ -52,25 +22,17 @@ interface IMultiplace is IERC165 {
         uint256 indexed tokenId,
         address indexed buyer,
         uint256 unitPrice,
+        uint256 amount,
         address paymentToken,
-        NFT_TYPE nftType,
+        IListings.NFT_TYPE nftType,
         address royaltyReceiver,
-        uint256 royaltyAmount
+        uint256 unitRoyaltyAmount
     );
-    event PaymentTokenAdded(address indexed paymentToken);
-    // event PaymentTokenRemoved(address indexed paymentToken);
 
     event FundsWithdrawn(
         address indexed to,
         address indexed paymentToken,
         uint256 amount
-    );
-    event RoyaltiesSet(
-        address lister,
-        address indexed tokenAddr,
-        uint256 indexed tokenId,
-        address indexed royaltyReceiver,
-        uint256 royaltyAmount
     );
     event Unlisted(address indexed tokenAddr, uint256 indexed tokenId);
 
@@ -95,14 +57,22 @@ interface IMultiplace is IERC165 {
     function buy(
         address seller,
         address tokenAddr,
-        uint256 tokenId
+        uint256 tokenId,
+        uint256 amount
     ) external;
 
     function status(
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external view returns (bool isSellerOwner, bool isTokenStillApproved);
+    )
+        external
+        view
+        returns (
+            bool isSellerOwner,
+            bool isTokenStillApproved,
+            IListings.Listing memory listing
+        );
 
     function unlistStale(
         address seller,
@@ -111,6 +81,7 @@ interface IMultiplace is IERC165 {
     ) external;
 
     function reserve(
+        address seller,
         address tokenAddr,
         uint256 tokenId,
         uint256 period,
@@ -121,7 +92,7 @@ interface IMultiplace is IERC165 {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external view returns (address reservedFor, uint256 reservedUntil);
+    ) external returns (address reservedFor, uint256 reservedUntil);
 
     function unlist(address tokenAddr, uint256 tokenId) external;
 
@@ -131,66 +102,53 @@ interface IMultiplace is IERC165 {
         uint256 tokenId
     ) external view returns (uint256 listPtr);
 
-    function addPaymentToken(address paymentToken) external;
-
-    function changeProtocolWallet(address newProtocolWallet) external;
-
-    function changeProtocolFee(
-        uint256 newProtocolFeeNumerator,
-        uint256 newProtocolFeeDenominator
-    ) external;
-
     function isListed(
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external view returns (bool hasBeenListed);
-
-    function isPaymentToken(address tokenAddress)
-        external
-        view
-        returns (bool isApproved);
+    ) external view returns (bool listed);
 
     function getBalance(address paymentToken, address account)
         external
-        view
         returns (uint256 balance);
-
-    function getSeller(address tokenAddr, uint256 tokenId)
-        external
-        view
-        returns (address seller);
 
     function getListingByPointer(uint256 listPtr)
         external
         view
-        returns (Listing memory listing);
+        returns (IListings.Listing memory listing);
 
     function getListing(
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external view returns (Listing memory listing);
+    ) external view returns (IListings.Listing memory listing);
 
-    function getAllListings() external view returns (Listing[] memory listings);
-
-    function getRoyalties(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId
-    ) external view returns (Royalty memory royalty);
-
-    function updateRoyaltyAmount(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId,
-        uint256 amount
-    ) external;
+    function getAllListings()
+        external
+        view
+        returns (IListings.Listing[] memory listings);
 
     function pullFunds(address paymentToken, uint256 amount) external;
 
-    function nftType(address tokenAddr)
+    function updateAdmin(address newAdmin) external;
+
+    function addPaymentToken(address paymentToken) external;
+
+    function isPaymentToken(address paymentToken) external view returns (bool);
+
+    function getUnitRoyalties(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external view returns (IListings.Royalty memory royalty);
+
+    function getSellers(address tokenAddr, uint256 tokenId)
         external
         view
-        returns (NFT_TYPE nftType);
+        returns (address[] memory sellers);
+
+    function getListings(address tokenAddr, uint256 tokenId)
+        external
+        view
+        returns (IListings.Listing[] memory listings);
 }

@@ -1,6 +1,4 @@
-const {
-  createProvider
-} = require('@rarible/trezor-provider');
+const { createProvider } = require("@rarible/trezor-provider");
 module.exports = {
   networks: {
     polygon_trezor: {
@@ -18,11 +16,10 @@ module.exports = {
       timeoutBlocks: 200, // # of blocks before a deployment times out  (minimum/default: 50)
       skipDryRun: true, // Skip dry run before migrations? (default: false for public nets )
     },
-
   },
   compilers: {
     solc: {
-      version: '0.8.5',
+      version: "0.8.5",
       settings: {
         optimizer: {
           enabled: true,
@@ -31,5 +28,4 @@ module.exports = {
       },
     },
   },
-
 };
