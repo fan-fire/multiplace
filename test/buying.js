@@ -427,10 +427,10 @@ describe("Buying", async (accounts) => {
           reservedFor: constants.ZERO_ADDRESS,
         };
 
-        let listers = await multiplace.getListers(tokenAddr, tokenId);
+        let sellers = await multiplace.getSellers(tokenAddr, tokenId);
 
-        expect(listers.length).to.be.equal(1);
-        expect(listers[0]).to.be.equal(seller.address);
+        expect(sellers.length).to.be.equal(1);
+        expect(sellers[0]).to.be.equal(seller.address);
 
         expectedListings.push(listingToAdd);
         listPtr += 1;

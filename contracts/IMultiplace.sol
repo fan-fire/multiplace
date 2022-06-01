@@ -81,6 +81,7 @@ interface IMultiplace is IERC165 {
     ) external;
 
     function reserve(
+        address seller,
         address tokenAddr,
         uint256 tokenId,
         uint256 period,
@@ -141,8 +142,13 @@ interface IMultiplace is IERC165 {
         uint256 tokenId
     ) external view returns (IListings.Royalty memory royalty);
 
-    function getListers(address tokenAddr, uint256 tokenId)
+    function getSellers(address tokenAddr, uint256 tokenId)
         external
         view
-        returns (address[] memory listers);
+        returns (address[] memory sellers);
+
+    function getListings(address tokenAddr, uint256 tokenId)
+        external
+        view
+        returns (IListings.Listing[] memory listings);
 }

@@ -192,12 +192,13 @@ contract Multiplace is IMultiplace, Storage, Pausable {
     }
 
     function reserve(
+        address seller,
         address tokenAddr,
         uint256 tokenId,
         uint256 period,
         address reservee
     ) external override {
-        listings.reserve(tokenAddr, tokenId, period, reservee);
+        listings.reserve(seller, tokenAddr, tokenId, period, reservee);
     }
 
     function getReservedState(
@@ -350,13 +351,29 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         return listings.getRoyalties(seller, tokenAddr, tokenId);
     }
 
-    function getListers(address tokenAddr, uint256 tokenId)
+    function getSellers(address tokenAddr, uint256 tokenId)
         public
         view
         override
-        returns (address[] memory listers)
+        returns (address[] memory sellers)
     {
-        return listings.getListers(tokenAddr, tokenId);
+        return listings.getSellers(tokenAddr, tokenId);
+    }
+
+    function getListings(address tokenAddr, uint256 tokenId)
+        public
+        view
+        override
+        returns (IListings.Listing[] memory _listings)
+    {
+        address[] memory sellers = getSellers(tokenAddr, tokenId);
+        IListings.Listing[] memory _listings = new IListings.Listing[](
+            sellers.length
+        );
+
+        for (uint256 i = 0; i < sellers.length; i++) {
+            _listings[i] = listings.getListing(sellers[i], tokenAddr, tokenId);
+        }
     }
 
     function supportsInterface(bytes4 interfaceId)

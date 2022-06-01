@@ -38,7 +38,7 @@ interface IListings is IERC165 {
     ) external;
 
     function unlist(
-        address unlister,
+        address seller,
         address tokenAddr,
         uint256 tokenId
     ) external;
@@ -103,6 +103,7 @@ interface IListings is IERC165 {
     ) external view returns (Royalty memory royalty);
 
     function reserve(
+        address seller,
         address tokenAddr,
         uint256 tokenId,
         uint256 period,
@@ -115,8 +116,8 @@ interface IListings is IERC165 {
         uint256 tokenId
     ) external returns (address reservedFor, uint256 reservedUntil);
 
-    function getListers(address tokenAddr, uint256 tokenId)
+    function getSellers(address tokenAddr, uint256 tokenId)
         external
         view
-        returns (address[] memory listers);
+        returns (address[] memory sellers);
 }
