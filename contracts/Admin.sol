@@ -2,23 +2,26 @@ pragma solidity 0.8.5;
 import "./IAdmin.sol";
 
 contract Admin is IAdmin {
-    address public owner;
+    address internal _owner;
     mapping(address => bool) internal _isPaymentToken; //Whether a given ERC20 contract is an excepted payment token
     uint256 internal _protocolFeeNumerator = 2500000000000; //Numerator of the protocol fee
     uint256 internal _protocolFeeDenominator = 100000000000000; //Denominator of the protocol fee
     address internal _protocolWallet;
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 internal constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
-    constructor() {
-        owner = msg.sender;
-        _protocolWallet = msg.sender;
+    constructor(address _initProtocolWallet) {
+        _owner = msg.sender;
+        _protocolWallet = _initProtocolWallet;
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner");
+        require(msg.sender == _owner, "Not owner contract");
         _;
     }
-
+    
+    function owner() public view override returns (address){
+        return _owner;
+    }
     function changeProtocolWallet(address newProtocolWallet)
         external
         override

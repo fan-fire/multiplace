@@ -20,6 +20,28 @@ const ADMIN_ROLE = ethers.utils.solidityKeccak256(["string"], ["ADMIN_ROLE"]);
 const PROTOCOL_FEE_DEN = ethers.BigNumber.from("10000000000000");
 const PROTOCOL_FEE_NUM = ethers.BigNumber.from("250000000000");
 
+function getInterfaceID(contractInterface) {
+  console.log("=======================");
+  let interfaceID = ethers.constants.Zero;
+  const functions = Object.keys(contractInterface.functions);
+  console.log(functions);
+  for (let i = 0; i < functions.length; i++) {
+    let f = functions[i]
+    let func = contractInterface.functions[f];
+    console.log(f);
+
+      // console.log(contractInterface.functions[functions[i]]);
+      let signhash =ethers.utils.id(f).substring(0,10)
+    // let signhash = contractInterface.functions[functions[i]].sighash;
+    console.log(`${functions[i]}: ${signhash}`);
+    interfaceID = interfaceID.xor(signhash);
+    console.log(`\t\t\t\t\tinterfaceID: ${interfaceID.toHexString()}`);
+  }
+
+  return interfaceID.toHexString();
+}
+
+
 const NFT_TYPE = {
   ERC721: 0,
   ERC721_2981: 1,
@@ -34,4 +56,5 @@ module.exports = {
   ADMIN_ROLE,
   PROTOCOL_FEE_DEN,
   PROTOCOL_FEE_NUM,
+  getInterfaceID
 };

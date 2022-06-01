@@ -6,6 +6,9 @@ interface IAdmin is IERC165 {
     event ProtocolFeeChanged(uint256 feeNumerator, uint256 feeDenominator);
     event PaymentTokenAdded(address indexed paymentToken);
 
+        
+    function owner() external view returns (address);
+
     function changeProtocolWallet(address newProtocolWallet) external;
 
     function changeProtocolFee(uint256 feeNumerator, uint256 feeDenominator)

@@ -9,6 +9,8 @@ const {
   listingToObject,
   PROTOCOL_FEE_DEN,
   PROTOCOL_FEE_NUM,
+  DEFAULT_ADMIN_ROLE,
+  getInterfaceID
 } = require("./utils");
 const ether = require("@openzeppelin/test-helpers/src/ether");
 
@@ -35,13 +37,14 @@ const getMultiplace = async () => {
 describe("Admin", async (accounts) => {
   let owner;
   let notOwner;
+  let multiplace;
 
   beforeEach(async () => {
     [owner, notOwner] = await ethers.getSigners();
   });
 
   it("MultiplaceProxy is set as the owner of deployed Admin", async () => {
-    let multiplace = await getMultiplace();
+    multiplace = await getMultiplace();
 
     let adminAddr = await multiplace.admin();
     const Admin = await ethers.getContractFactory("Admin");
@@ -55,7 +58,7 @@ describe("Admin", async (accounts) => {
   });
 
   it("Can update the protoccl fee via multiplace", async () => {
-    let multiplace = await getMultiplace();
+    multiplace = await getMultiplace();
     let defaultFeeNumerator = ethers.BigNumber.from("2500000000000");
     let defaultFeeDenominator = ethers.BigNumber.from("100000000000000");
 
@@ -108,22 +111,197 @@ describe("Admin", async (accounts) => {
       newFeeDenominator.toString()
     );
   });
-  it("Can't update the protoccl fee directly going to admin contract", async () => {});
+  it("Can't update the protocol fee directly going to admin contract", async () => {
+    multiplace = await getMultiplace();
+    let adminAddr = await multiplace.admin();
+    const Admin = await ethers.getContractFactory("Admin");
+    let admin = await Admin.attach(adminAddr);
 
-  it("Can update the protoccl wallet via multiplace", async () => {});
-  it("Can't update the protoccl wallet directly going to admin contract", async () => {});
+    let newFeeNumerator = 10;
+    let newFeeDenominator = 1000;
 
-  it("Can update the payment token via multiplace", async () => {});
-  it("Can't update the payment token directly going to admin contract", async () => {});
+    await expect(
+      admin.connect(owner).changeProtocolFee(newFeeNumerator, newFeeDenominator)
+    ).to.be.revertedWith("Not owner contract");
+    await expect(
+      admin
+        .connect(notOwner)
+        .changeProtocolFee(newFeeNumerator, newFeeDenominator)
+    ).to.be.revertedWith("Not owner contract");
+  });
 
-  it("Admin supports 165", async () => {});
-  it("Admin supports correct IAdmin", async () => {});
+  it("Can't update the protocol fee via mutiplace if not owner", async () => {
+    multiplace = await getMultiplace();
 
-  it("Deployer is the default protocol wallet after deploying", async () => {});
+    let newFeeNumerator = 10;
+    let newFeeDenominator = 1000;
 
-  it("Can't change protocol wallet to ZERO_ADDRESS");
+    await expect(
+      multiplace
+        .connect(notOwner)
+        .changeProtocolFee(newFeeNumerator, newFeeDenominator)
+    ).to.be.revertedWith(
+      `AccessControl: account ${notOwner.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`
+    );
+  });
 
-  it("ProtocolWalletChanged event emitted", async () => {});
-  it("ProtocolFeeChanged event emitted", async () => {});
-  it("PaymentTokenAdded event emitted", async () => {});
+  it("Can update the protocol wallet via multiplace", async () => {
+    multiplace = await getMultiplace();
+    let defaultProtocolWallet = owner.address;
+
+    let adminAddr = await multiplace.admin();
+    const Admin = await ethers.getContractFactory("Admin");
+    let admin = await Admin.attach(adminAddr);
+
+    let adminProtocolWallet = await admin.protocolWallet();
+    let multiplaceProtocolWallet = await multiplace.protocolWallet();
+
+    expect(adminProtocolWallet).to.be.equal(
+      defaultProtocolWallet,
+      "Admin protocol wallet should be the owner"
+    );
+
+    expect(multiplaceProtocolWallet).to.be.equal(
+      defaultProtocolWallet,
+      "Multiplace protocol wallet should be the owner"
+    );
+
+    let newProtocolWallet = notOwner.address;
+
+    await multiplace.connect(owner).changeProtocolWallet(newProtocolWallet);
+
+    adminProtocolWallet = await admin.protocolWallet();
+    multiplaceProtocolWallet = await multiplace.protocolWallet();
+
+    expect(adminProtocolWallet).to.be.equal(
+      newProtocolWallet,
+      "Admin protocol wallet should now be the notOwner"
+    );
+
+    expect(multiplaceProtocolWallet).to.be.equal(
+      newProtocolWallet,
+      "Multiplace protocol wallet should now be the notOwner"
+    );
+  });
+
+  it("Can't update the protocol wallet via mutiplace if not owner", async () => {
+    multiplace = await getMultiplace();
+
+    let newProtocolWallet = notOwner.address;
+    await expect(
+      multiplace.connect(notOwner).changeProtocolWallet(newProtocolWallet)
+    ).to.be.revertedWith(
+      `AccessControl: account ${notOwner.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`
+    );
+  });
+
+  it("Can't update the protocol wallet directly going to admin contract", async () => {
+    multiplace = await getMultiplace();
+    let adminAddr = await multiplace.admin();
+    const Admin = await ethers.getContractFactory("Admin");
+    let admin = await Admin.attach(adminAddr);
+
+    let newProtocolWallet = notOwner.address;
+
+    await expect(
+      admin.connect(owner).changeProtocolWallet(newProtocolWallet)
+    ).to.be.revertedWith("Not owner contract");
+    await expect(
+      admin.connect(notOwner).changeProtocolWallet(newProtocolWallet)
+    ).to.be.revertedWith("Not owner contract");
+  });
+
+  it("Can update the payment token via multiplace", async () => {
+    multiplace = await getMultiplace();
+    let dummyPaymentTokenAddress = notOwner.address;
+
+    let multiplaceIsPaymentToken = await multiplace.isPaymentToken(
+      dummyPaymentTokenAddress
+    );
+    expect(multiplaceIsPaymentToken).to.be.false;
+
+    let adminAddr = await multiplace.admin();
+    const Admin = await ethers.getContractFactory("Admin");
+    let admin = await Admin.attach(adminAddr);
+
+    let adminIsPaymentToken = await admin.isPaymentToken(
+      dummyPaymentTokenAddress
+    );
+    expect(adminIsPaymentToken).to.be.false;
+
+    await multiplace.connect(owner).addPaymentToken(dummyPaymentTokenAddress);
+
+    multiplaceIsPaymentToken = await multiplace.isPaymentToken(
+      dummyPaymentTokenAddress
+    );
+    expect(multiplaceIsPaymentToken).to.be.true;
+
+    adminIsPaymentToken = await admin.isPaymentToken(dummyPaymentTokenAddress);
+    expect(adminIsPaymentToken).to.be.true;
+  });
+  it("Can't update the protocol wallet via mutiplace if not owner", async () => {
+    multiplace = await getMultiplace();
+    let dummyPaymentTokenAddress = notOwner.address;
+
+    await expect(
+      multiplace.connect(notOwner).addPaymentToken(dummyPaymentTokenAddress)
+    ).to.be.revertedWith(
+      `AccessControl: account ${notOwner.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`
+    );
+  });
+  it("Can't update the payment token directly going to admin contract", async () => {
+    multiplace = await getMultiplace();
+    let dummyPaymentTokenAddress = notOwner.address;
+
+    let multiplaceIsPaymentToken = await multiplace.isPaymentToken(
+      dummyPaymentTokenAddress
+    );
+    expect(multiplaceIsPaymentToken).to.be.false;
+
+    let adminAddr = await multiplace.admin();
+    const Admin = await ethers.getContractFactory("Admin");
+    let admin = await Admin.attach(adminAddr);
+
+    await expect(
+      admin.connect(notOwner).addPaymentToken(dummyPaymentTokenAddress)
+    ).to.be.revertedWith("Not owner contract");
+    await expect(
+      admin.connect(owner).addPaymentToken(dummyPaymentTokenAddress)
+    ).to.be.revertedWith("Not owner contract");
+  });
+
+  it("Admin supports 165", async () => {
+    multiplace = await getMultiplace();
+    let adminAddr = await multiplace.admin();
+    const Admin = await ethers.getContractFactory("Admin");
+    let admin = await Admin.attach(adminAddr);
+
+    let interfaceId165 = "0x01ffc9a7";
+
+    let adminSupports165 = await admin.supportsInterface(interfaceId165);
+    expect(adminSupports165).to.be.true;
+  });
+
+  it.skip("Admin supports correct IAdmin", async () => {
+    multiplace = await getMultiplace();
+    let adminAddr = await multiplace.admin();
+    const Admin = await ethers.getContractFactory("Admin");
+    let admin = await Admin.attach(adminAddr);
+    // const IAdmin = await ethers.getContractFactory("IAdmin");
+
+    const IERC165 = await ethers.getContractFactory(require('../artifacts/@openzeppelin/contracts/utils/introspection/ERC165.sol/ERC165.json').abi)
+  
+
+  let interfaceId165 = getInterfaceID(IERC165.interface);
+  console.log(`interfaceId165: ${interfaceId165}`)
+  let interfaceId = getInterfaceID(admin.interface);
+  console.log(`interfaceId: ${interfaceId}`)
+
+  });
+
+  it.skip("Can't change protocol wallet to ZERO_ADDRESS", async () => {});
+
+  it.skip("ProtocolWalletChanged event emitted", async () => {});
+  it.skip("ProtocolFeeChanged event emitted", async () => {});
+  it.skip("PaymentTokenAdded event emitted", async () => {});
 });
