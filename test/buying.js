@@ -916,10 +916,244 @@ describe("Buying", async (accounts) => {
     );
   });
 
-  it.skip("should fail if original seller does not own the token anymore and the token is bought for ERC721", async () => {});
-  it.skip("should fail if original seller removed approval after listing and token is bought for ERC721", async () => {});
-  it.skip("should fail if original seller does not own the token anymore and the token is bought for ERC1155", async () => {});
-  it.skip("should fail and unlist item if original seller removed the approve for ERC1155", async () => {});
-  it.skip("fails if NFT not listed", async () => {});
-  it.skip("fails if buyer doens't have enough ERC20 balance", async () => {});
+  it("should fail if original seller does not own the token anymore and the token is bought for ERC721", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 2;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let amount = listing.amount;
+    let unitPrice = listing.unitPrice;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+
+    let from = seller.address;
+    let to = acc1.address;
+    await erc721Mock.connect(seller).transferFrom(from, to, tokenId);
+
+    let ownerOfToken = await erc721Mock.ownerOf(tokenId);
+    expect(ownerOfToken).to.be.equal(
+      acc1.address,
+      "token should be owned by acc1"
+    );
+
+    await erc20Mock.connect(buyer1).approve(multiplace.address, totalPrice);
+
+    await expect(
+      multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount)
+    ).to.be.revertedWith("NFT not owned by seller");
+  });
+
+  it("should fail if original seller does not own any of the tokens anymore and the token is bought for ERC155", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc1155Mock.address;
+    let tokenId = 2;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let amount = listing.amount;
+    let unitPrice = listing.unitPrice;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+
+    let from = seller.address;
+    let to = acc1.address;
+
+    let oldBalanceOfSeller = await erc1155Mock.balanceOf(from, tokenId);
+
+    await erc1155Mock
+      .connect(seller)
+      .safeTransferFrom(from, to, tokenId, oldBalanceOfSeller, "0x");
+
+    let newBalanceOfSeller = await erc1155Mock.balanceOf(from, tokenId);
+    expect(newBalanceOfSeller.toString()).to.be.equal(
+      "0",
+      "seller should have no tokens"
+    );
+
+    let balanceOfOwner = await erc1155Mock.balanceOf(to, tokenId);
+    expect(balanceOfOwner).to.be.equal(
+      oldBalanceOfSeller.toString(),
+      "full amount should be owned by acc1"
+    );
+
+    await erc20Mock.connect(buyer1).approve(multiplace.address, totalPrice);
+
+    await expect(
+      multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount)
+    ).to.be.revertedWith("NFT not owned by seller");
+  });
+
+  it("should fail if original seller does not own enough of the token anymore and the token is bought for ERC155", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc1155Mock.address;
+    let tokenId = 2;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let amount = listing.amount;
+    let unitPrice = listing.unitPrice;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+
+    let from = seller.address;
+    let to = acc1.address;
+
+    let oldBalanceOfSeller = await erc1155Mock.balanceOf(from, tokenId);
+    // keep 1 token, but we'll try and buy 2
+    oldBalanceOfSeller = oldBalanceOfSeller.sub(1);
+
+    await erc1155Mock
+      .connect(seller)
+      .safeTransferFrom(from, to, tokenId, oldBalanceOfSeller, "0x");
+
+    let newBalanceOfSeller = await erc1155Mock.balanceOf(from, tokenId);
+    expect(newBalanceOfSeller.toString()).to.be.equal(
+      "1",
+      "seller should have no tokens"
+    );
+
+    let balanceOfOwner = await erc1155Mock.balanceOf(to, tokenId);
+    expect(balanceOfOwner).to.be.equal(
+      oldBalanceOfSeller.toString(),
+      "full amount should be owned by acc1"
+    );
+
+    await erc20Mock.connect(buyer1).approve(multiplace.address, totalPrice);
+
+    await expect(
+      multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount)
+    ).to.be.revertedWith("NFT not owned by seller");
+  });
+
+  it("should fail if original seller removed approval after listing and token is bought for ERC721", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 2;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let amount = listing.amount;
+    let unitPrice = listing.unitPrice;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+
+    await erc721Mock
+      .connect(seller)
+      .setApprovalForAll(multiplace.address, false);
+
+    let appproved = await erc721Mock.isApprovedForAll(
+      sellerAddr,
+      multiplace.address
+    );
+    expect(appproved).to.be.equal(
+      false,
+      "seller should not have approval for multiplace"
+    );
+
+    await erc20Mock.connect(buyer1).approve(multiplace.address, totalPrice);
+
+    await expect(
+      multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount)
+    ).to.be.revertedWith("Marketplace not approved for NFT");
+  });
+  it("should fail if original seller removed approval after listing and token is bought for ERC1155", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc1155Mock.address;
+    let tokenId = 2;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let amount = listing.amount;
+    let unitPrice = listing.unitPrice;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+
+    await erc1155Mock
+      .connect(seller)
+      .setApprovalForAll(multiplace.address, false);
+
+    let appproved = await erc1155Mock.isApprovedForAll(
+      sellerAddr,
+      multiplace.address
+    );
+    expect(appproved).to.be.equal(
+      false,
+      "seller should not have approval for multiplace"
+    );
+
+    await erc20Mock.connect(buyer1).approve(multiplace.address, totalPrice);
+
+    await expect(
+      multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount)
+    ).to.be.revertedWith("Marketplace not approved for NFT");
+  });
+
+  it("fails if ERC721 not listed", async () => {
+    const NewNFT = await ethers.getContractFactory("ERC721Mock");
+    let newNFT = await NewNFT.deploy();
+    await newNFT.deployed();
+
+    await newNFT.mint(seller.address);
+    tokenId = 0;
+
+    let ownerOfToken = await newNFT.ownerOf(tokenId);
+    expect(ownerOfToken).to.be.equal(
+      seller.address,
+      "token should be owned by seller"
+    );
+
+    sellerAddr = seller.address;
+    tokenAddr = newNFT.address;
+    amount = 1;
+
+    await expect(
+      multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount)
+    ).to.be.revertedWith("Token not listed");
+  });
+
+  it("fails if ERC1155 not listed", async () => {
+    const NewNFT = await ethers.getContractFactory("ERC1155Mock");
+    let newNFT = await NewNFT.deploy();
+    await newNFT.deployed();
+
+    tokenId = 1;
+    amount = 10;
+    await newNFT.mint(seller.address, tokenId, amount);
+
+    let sellerAmount = await newNFT.balanceOf(seller.address, tokenId);
+    expect(sellerAmount.toString()).to.be.equal(
+      amount.toString(),
+      "seller should have 10 tokens"
+    );
+
+    sellerAddr = seller.address;
+    tokenAddr = newNFT.address;
+
+    await expect(
+      multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount)
+    ).to.be.revertedWith("Token not listed");
+  });
+
+  it.skip("fails if buyer doens't have enough ERC20 balance", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721With2981Mock.address;
+    let tokenId = 2;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let amount = listing.amount;
+    let totalPrice = ethers.BigNumber.from(amount).mul(listing.unitPrice);
+
+    let buyer1BalanceB4 = await erc20Mock.balanceOf(buyer1.address);
+
+    await erc20Mock.connect(buyer1).transfer(buyer2.address, buyer1BalanceB4);
+    // await erc20Mock.connect(buyer1).approve(multiplace.address, totalPrice);
+
+    // let buyer1Balance = await erc20Mock.balanceOf(buyer1.address);
+    // expect(buyer1Balance.toString()).to.be.equal(
+    //   "0",
+    //   "buyer should have no tokens"
+    // );
+
+    await expect(
+      multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount, {})
+    ).to.be.revertedWith("Insufficient balance");
+  });
 });

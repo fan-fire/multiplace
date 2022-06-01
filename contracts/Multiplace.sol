@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.5;
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/interfaces/IERC721.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/interfaces/IERC1155.sol";
@@ -77,10 +77,13 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         uint256 price = listing.unitPrice * amount;
         address paymentToken = listing.paymentToken;
 
-        require(
-            IERC20(paymentToken).balanceOf(msg.sender) >= price,
-            "Insufficient funds"
-        );
+        // console.log("price %s", price);
+        // console.log("paymentToken %s", paymentToken);
+
+        uint256 balance = IERC20(paymentToken).balanceOf(msg.sender);
+        // console.log("balance %s", balance);
+
+        require(balance >= price, "Insufficient funds");
         // check if marketplace is allowed to transfer payment token
         require(
             //  allowance(address owner, address spender)

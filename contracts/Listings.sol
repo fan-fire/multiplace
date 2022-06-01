@@ -218,8 +218,8 @@ contract Listings is IListings {
             tokenId
         );
 
-        require(isSellerOwner, "NFT not owned");
-        require(isTokenStillApproved, "NFT not approved");
+        require(isSellerOwner, "NFT not owned by seller");
+        require(isTokenStillApproved, "Marketplace not approved for NFT");
 
         // check reserving
         if (block.timestamp < listing.reservedUntil) {
