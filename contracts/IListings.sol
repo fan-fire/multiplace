@@ -12,7 +12,7 @@ interface IListings is IERC165 {
 
     struct Royalty {
         address receiver;
-        uint256 royaltyAmount;
+        uint256 unitRoyaltyAmount;
     }
 
     struct Listing {
@@ -96,7 +96,7 @@ interface IListings is IERC165 {
 
     function getAllListings() external view returns (Listing[] memory listings);
 
-    function getRoyalties(
+    function getUnitRoyalties(
         address seller,
         address tokenAddr,
         uint256 tokenId

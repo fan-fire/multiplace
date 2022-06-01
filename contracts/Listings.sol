@@ -18,7 +18,7 @@ contract Listings is IListings {
     mapping(address => mapping(address => mapping(uint256 => uint256)))
         internal _token2Ptr; //Mapping from lister.tokenAddr.tokenId -> listPtr to quickly lookup the listing given lister.tokenAddr.tokenId
     mapping(address => mapping(address => mapping(uint256 => Royalty)))
-        internal _royalties; //Royalties of each lister.tokenAddr.tokenId pair
+        internal _unitRoyalties; //Royalties of each lister.tokenAddr.tokenId pair
     mapping(address => mapping(uint256 => address[])) internal _sellers; //Mapping from tokenAddr.tokenId -> array of addresses currently listing
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         internal _sellersPtr; //Mapping from tokenAddr.tokenId.lister -> listersPtr to be able to pop a lister given the address
@@ -33,7 +33,7 @@ contract Listings is IListings {
         address paymentToken,
         IListings.NFT_TYPE nftType,
         address royaltyReceiver,
-        uint256 royaltyAmount
+        uint256 unitRoyaltyAmount
     );
     event Bought(
         uint256 listPtr,
@@ -46,7 +46,7 @@ contract Listings is IListings {
         address paymentToken,
         IListings.NFT_TYPE nftType,
         address royaltyReceiver,
-        uint256 royaltyAmount
+        uint256 unitRoyaltyAmount
     );
 
     event Unlisted(address indexed tokenAddr, uint256 indexed tokenId);
@@ -140,12 +140,12 @@ contract Listings is IListings {
             _nftType == NFT_TYPE.ERC721_2981
         ) {
             address receiver;
-            uint256 royaltyAmount;
-            (receiver, royaltyAmount) = IERC2981(tokenAddr).royaltyInfo(
+            uint256 unitRoyaltyAmount;
+            (receiver, unitRoyaltyAmount) = IERC2981(tokenAddr).royaltyInfo(
                 tokenId,
                 unitPrice
             );
-            royalty = Royalty(receiver, royaltyAmount);
+            royalty = Royalty(receiver, unitRoyaltyAmount);
         } else {
             bytes memory data = abi.encodeWithSignature("owner()");
             (bool success, bytes memory returnData) = tokenAddr.call{value: 0}(
@@ -163,7 +163,7 @@ contract Listings is IListings {
             }
         }
         // set royalties mapping
-        _royalties[lister][tokenAddr][tokenId] = royalty;
+        _unitRoyalties[lister][tokenAddr][tokenId] = royalty;
 
         // update _token2Ptr
         _token2Ptr[lister][tokenAddr][tokenId] = listPtr;
@@ -181,7 +181,7 @@ contract Listings is IListings {
             paymentToken,
             _nftType,
             royalty.receiver,
-            royalty.royaltyAmount
+            royalty.unitRoyaltyAmount
         );
     }
 
@@ -241,7 +241,7 @@ contract Listings is IListings {
             //     listing.paymentToken,
             //     listing.nftType,
             //     listing.royaltyReceiver,
-            //     listing.royaltyAmount
+            //     listing.unitRoyaltyAmount
             // );
         } else {
             assert(_unlist(listing));
@@ -399,12 +399,12 @@ contract Listings is IListings {
         return _listings;
     }
 
-    function getRoyalties(
+    function getUnitRoyalties(
         address seller,
         address tokenAddr,
         uint256 tokenId
     ) public view override returns (Royalty memory royalty) {
-        royalty = _royalties[seller][tokenAddr][tokenId];
+        royalty = _unitRoyalties[seller][tokenAddr][tokenId];
     }
 
     function reserve(

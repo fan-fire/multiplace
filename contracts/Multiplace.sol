@@ -41,7 +41,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         //     tokenId
         // );
 
-        // IListings.Royalty memory royalty = listings.getRoyalties(
+        // IListings.Royalty memory royalty = listings.getUnitRoyalties(
         //     listing.seller,
         //     listing.tokenAddr,
         //     listing.tokenId
@@ -57,7 +57,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         //     listing.paymentToken,
         //     listing.nftType,
         //     royalty.receiver,
-        //     royalty.royaltyAmount
+        //     royalty.unitRoyaltyAmount
         // );
     }
 
@@ -90,7 +90,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
 
         // get royalties from mapping
 
-        IListings.Royalty memory royalty = listings.getRoyalties(
+        IListings.Royalty memory royalty = listings.getUnitRoyalties(
             seller,
             tokenAddr,
             tokenId
@@ -117,13 +117,13 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         _balances[paymentToken][listing.seller] =
             _balances[paymentToken][listing.seller] +
             price -
-            royalty.royaltyAmount -
+            royalty.unitRoyaltyAmount -
             protocolAmount;
 
         // pay artist
         _balances[paymentToken][royalty.receiver] =
             _balances[paymentToken][royalty.receiver] +
-            royalty.royaltyAmount;
+            royalty.unitRoyaltyAmount;
 
         // pay protocol
         _balances[paymentToken][admin.protocolWallet()] =
@@ -162,7 +162,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
             paymentToken,
             listing.nftType,
             royalty.receiver,
-            royalty.royaltyAmount
+            royalty.unitRoyaltyAmount
         );
     }
 
@@ -343,12 +343,12 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         return admin.isPaymentToken(paymentToken);
     }
 
-    function getRoyalties(
+    function getUnitRoyalties(
         address seller,
         address tokenAddr,
         uint256 tokenId
     ) public view override returns (IListings.Royalty memory royalty) {
-        return listings.getRoyalties(seller, tokenAddr, tokenId);
+        return listings.getUnitRoyalties(seller, tokenAddr, tokenId);
     }
 
     function getSellers(address tokenAddr, uint256 tokenId)

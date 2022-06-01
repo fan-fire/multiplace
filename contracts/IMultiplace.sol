@@ -14,7 +14,7 @@ interface IMultiplace is IERC165 {
         address paymentToken,
         IListings.NFT_TYPE nftType,
         address royaltyReceiver,
-        uint256 royaltyAmount
+        uint256 unitRoyaltyAmount
     );
     event Bought(
         uint256 listPtr,
@@ -26,7 +26,7 @@ interface IMultiplace is IERC165 {
         address paymentToken,
         IListings.NFT_TYPE nftType,
         address royaltyReceiver,
-        uint256 royaltyAmount
+        uint256 unitRoyaltyAmount
     );
 
     event FundsWithdrawn(
@@ -136,7 +136,7 @@ interface IMultiplace is IERC165 {
 
     function isPaymentToken(address paymentToken) external view returns (bool);
 
-    function getRoyalties(
+    function getUnitRoyalties(
         address seller,
         address tokenAddr,
         uint256 tokenId

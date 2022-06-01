@@ -1546,10 +1546,10 @@ describe("Listing", async () => {
       tokenId,
       unitPrice
     );
-    let royaltyAmountFrom721 = royaltyFrom721.royaltyAmount;
+    let unitRoyaltyAmountFrom721 = royaltyFrom721.royaltyAmount;
     let receiverFrom721 = royaltyFrom721.receiver;
 
-    expect(royaltyAmountFrom721).to.be.equal(unitPrice / royaltyPercentage);
+    expect(unitRoyaltyAmountFrom721).to.be.equal(unitPrice / royaltyPercentage);
     expect(receiverFrom721).to.be.equal(owner.address);
 
     await erc721With2981Mock
@@ -1560,15 +1560,18 @@ describe("Listing", async () => {
       .connect(lister)
       .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
 
-    let royaltyFromMultiplace = await multiplace.getRoyalties(
+    let royaltyFromMultiplace = await multiplace.getUnitRoyalties(
       lister.address,
       tokenAddr,
       tokenId
     );
-    let royaltyAmountFromMultiplace = royaltyFromMultiplace.royaltyAmount;
+    let unitRoyaltyAmountFromMultiplace =
+      royaltyFromMultiplace.unitRoyaltyAmount;
     let receiverFromMultiplace = royaltyFromMultiplace.receiver;
 
-    expect(royaltyAmountFromMultiplace).to.be.equal(royaltyAmountFrom721);
+    expect(unitRoyaltyAmountFromMultiplace).to.be.equal(
+      unitRoyaltyAmountFrom721
+    );
     expect(receiverFromMultiplace).to.be.equal(receiverFrom721);
   });
   it("Royalties are correctly set for ERC1155 if listing supports ERC2981", async () => {
@@ -1583,10 +1586,12 @@ describe("Listing", async () => {
       tokenId,
       unitPrice
     );
-    let royaltyAmountFrom1155 = royaltyFrom1155.royaltyAmount;
+    let unitRoyaltyAmountFrom1155 = royaltyFrom1155.royaltyAmount;
     let receiverFrom1155 = royaltyFrom1155.receiver;
 
-    expect(royaltyAmountFrom1155).to.be.equal(unitPrice / royaltyPercentage);
+    expect(unitRoyaltyAmountFrom1155).to.be.equal(
+      unitPrice / royaltyPercentage
+    );
     expect(receiverFrom1155).to.be.equal(owner.address);
 
     await erc1155With2981Mock
@@ -1597,15 +1602,18 @@ describe("Listing", async () => {
       .connect(lister)
       .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
 
-    let royaltyFromMultiplace = await multiplace.getRoyalties(
+    let royaltyFromMultiplace = await multiplace.getUnitRoyalties(
       lister.address,
       tokenAddr,
       tokenId
     );
-    let royaltyAmountFromMultiplace = royaltyFromMultiplace.royaltyAmount;
+    let unitRoyaltyAmountFromMultiplace =
+      royaltyFromMultiplace.unitRoyaltyAmount;
     let receiverFromMultiplace = royaltyFromMultiplace.receiver;
 
-    expect(royaltyAmountFromMultiplace).to.be.equal(royaltyAmountFrom1155);
+    expect(unitRoyaltyAmountFromMultiplace).to.be.equal(
+      unitRoyaltyAmountFrom1155
+    );
     expect(receiverFromMultiplace).to.be.equal(receiverFrom1155);
   });
 
@@ -1624,15 +1632,16 @@ describe("Listing", async () => {
       .connect(lister)
       .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
 
-    let royaltyFromMultiplace = await multiplace.getRoyalties(
+    let royaltyFromMultiplace = await multiplace.getUnitRoyalties(
       lister.address,
       tokenAddr,
       tokenId
     );
-    let royaltyAmountFromMultiplace = royaltyFromMultiplace.royaltyAmount;
+    let unitRoyaltyAmountFromMultiplace =
+      royaltyFromMultiplace.unitRoyaltyAmount;
     let receiverFromMultiplace = royaltyFromMultiplace.receiver;
 
-    expect(royaltyAmountFromMultiplace).to.be.equal(0);
+    expect(unitRoyaltyAmountFromMultiplace).to.be.equal(0);
     expect(receiverFromMultiplace).to.be.equal(owner.address);
   });
 
@@ -1651,15 +1660,16 @@ describe("Listing", async () => {
       .connect(lister)
       .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
 
-    let royaltyFromMultiplace = await multiplace.getRoyalties(
+    let royaltyFromMultiplace = await multiplace.getUnitRoyalties(
       lister.address,
       tokenAddr,
       tokenId
     );
-    let royaltyAmountFromMultiplace = royaltyFromMultiplace.royaltyAmount;
+    let unitRoyaltyAmountFromMultiplace =
+      royaltyFromMultiplace.unitRoyaltyAmount;
     let receiverFromMultiplace = royaltyFromMultiplace.receiver;
 
-    expect(royaltyAmountFromMultiplace).to.be.equal(0);
+    expect(unitRoyaltyAmountFromMultiplace).to.be.equal(0);
     expect(receiverFromMultiplace).to.be.equal(owner.address);
   });
   it("Royalties are correctly set if listing does not support ERC2981 and ERC721 does not have an owner", async () => {
@@ -1677,15 +1687,16 @@ describe("Listing", async () => {
       .connect(lister)
       .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
 
-    let royaltyFromMultiplace = await multiplace.getRoyalties(
+    let royaltyFromMultiplace = await multiplace.getUnitRoyalties(
       lister.address,
       tokenAddr,
       tokenId
     );
-    let royaltyAmountFromMultiplace = royaltyFromMultiplace.royaltyAmount;
+    let unitRoyaltyAmountFromMultiplace =
+      royaltyFromMultiplace.unitRoyaltyAmount;
     let receiverFromMultiplace = royaltyFromMultiplace.receiver;
 
-    expect(royaltyAmountFromMultiplace).to.be.equal(0);
+    expect(unitRoyaltyAmountFromMultiplace).to.be.equal(0);
     expect(receiverFromMultiplace).to.be.equal(constants.ZERO_ADDRESS);
   });
   it("Royalties are correctly set if listing does not support ERC2981 and ERC1155 does not have an owner", async () => {
@@ -1703,15 +1714,16 @@ describe("Listing", async () => {
       .connect(lister)
       .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
 
-    let royaltyFromMultiplace = await multiplace.getRoyalties(
+    let royaltyFromMultiplace = await multiplace.getUnitRoyalties(
       lister.address,
       tokenAddr,
       tokenId
     );
-    let royaltyAmountFromMultiplace = royaltyFromMultiplace.royaltyAmount;
+    let unitRoyaltyAmountFromMultiplace =
+      royaltyFromMultiplace.unitRoyaltyAmount;
     let receiverFromMultiplace = royaltyFromMultiplace.receiver;
 
-    expect(royaltyAmountFromMultiplace).to.be.equal(0);
+    expect(unitRoyaltyAmountFromMultiplace).to.be.equal(0);
     expect(receiverFromMultiplace).to.be.equal(constants.ZERO_ADDRESS);
   });
 });
