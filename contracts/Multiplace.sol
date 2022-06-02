@@ -74,20 +74,21 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         );
 
         // check balance of msg.sender for listed item
-        uint256 price = listing.unitPrice * amount;
+        uint256 totalPrice = listing.unitPrice * amount;
         address paymentToken = listing.paymentToken;
 
-        // console.log("price %s", price);
+        // console.log("totalPrice %s", totalPrice);
         // console.log("paymentToken %s", paymentToken);
 
         uint256 balance = IERC20(paymentToken).balanceOf(msg.sender);
         // console.log("balance %s", balance);
 
-        require(balance >= price, "Insufficient funds");
+        require(balance >= totalPrice, "Insufficient funds");
         // check if marketplace is allowed to transfer payment token
         require(
             //  allowance(address owner, address spender)
-            IERC20(paymentToken).allowance(msg.sender, address(this)) >= price,
+            IERC20(paymentToken).allowance(msg.sender, address(this)) >=
+                totalPrice,
             "Not approved for enough ERC20"
         );
 
@@ -99,6 +100,8 @@ contract Multiplace is IMultiplace, Storage, Pausable {
             tokenId
         );
 
+        uint256 totalRoyalty = royalty.unitRoyaltyAmount * amount;
+
         // unlist token
         require(
             listings.buy(msg.sender, seller, tokenAddr, tokenId, amount),
@@ -108,30 +111,34 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         // transfer funds to marketplace
 
         require(
-            IERC20(paymentToken).transferFrom(msg.sender, address(this), price),
+            IERC20(paymentToken).transferFrom(
+                msg.sender,
+                address(this),
+                totalPrice
+            ),
             "ERC20 transfer failed"
         );
 
         // update _balances
-        uint256 protocolAmount = (price * admin.protocolFeeNumerator()) /
+        uint256 totalProtocolFee = (totalPrice * admin.protocolFeeNumerator()) /
             admin.protocolFeeDenominator();
 
         // pay seller
         _balances[paymentToken][listing.seller] =
             _balances[paymentToken][listing.seller] +
-            price -
-            royalty.unitRoyaltyAmount -
-            protocolAmount;
+            totalPrice -
+            totalRoyalty -
+            totalProtocolFee;
 
         // pay artist
         _balances[paymentToken][royalty.receiver] =
             _balances[paymentToken][royalty.receiver] +
-            royalty.unitRoyaltyAmount;
+            totalRoyalty;
 
         // pay protocol
         _balances[paymentToken][admin.protocolWallet()] =
             _balances[paymentToken][admin.protocolWallet()] +
-            protocolAmount;
+            totalProtocolFee;
 
         // INTEGRATIONS
         if (
@@ -316,14 +323,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         _unpause();
     }
 
-    function updateAdmin(address newAdmin)
-        public
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        admin = IAdmin(newAdmin);
-    }
-
     function addPaymentToken(address paymentToken)
         public
         override
@@ -340,7 +339,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         public
         view
         override
-        onlyRole(DEFAULT_ADMIN_ROLE)
         returns (bool)
     {
         return admin.isPaymentToken(paymentToken);
@@ -388,6 +386,35 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         return
             interfaceId == type(IMultiplace).interfaceId ||
             interfaceId == type(IAccessControl).interfaceId ||
+            interfaceId == type(IERC165).interfaceId ||
             super.supportsInterface(interfaceId);
+    }
+
+    function changeProtocolWallet(address newProtocolWallet)
+        public
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        admin.changeProtocolWallet(newProtocolWallet);
+    }
+
+    function changeProtocolFee(uint256 feeNumerator, uint256 feeDenominator)
+        public
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        admin.changeProtocolFee(feeNumerator, feeDenominator);
+    }
+
+    function protocolFeeNumerator() public view override returns (uint256) {
+        return admin.protocolFeeNumerator();
+    }
+
+    function protocolFeeDenominator() public view override returns (uint256) {
+        return admin.protocolFeeDenominator();
+    }
+
+    function protocolWallet() public view override returns (address) {
+        return admin.protocolWallet();
     }
 }

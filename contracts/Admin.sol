@@ -2,32 +2,25 @@ pragma solidity 0.8.5;
 import "./IAdmin.sol";
 
 contract Admin is IAdmin {
-    address public _protocolWallet;
-    address public owner;
+    address internal _owner;
     mapping(address => bool) internal _isPaymentToken; //Whether a given ERC20 contract is an excepted payment token
-    uint256 internal _protocolFeeNumerator = 25000000; //Numerator of the protocol fee
-    uint256 internal _protocolFeeDenominator = 1000000000; //Denominator of the protocol fee
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    uint256 internal _protocolFeeNumerator = 2500000000000; //Numerator of the protocol fee
+    uint256 internal _protocolFeeDenominator = 100000000000000; //Denominator of the protocol fee
+    address internal _protocolWallet;
+    bytes32 internal constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
-    constructor() {
-        owner = msg.sender;
+    constructor(address _initProtocolWallet) {
+        _owner = msg.sender;
+        _protocolWallet = _initProtocolWallet;
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner");
+        require(msg.sender == _owner, "Not owner contract");
         _;
     }
 
-    function protocolWallet() public view override returns (address) {
-        return _protocolWallet;
-    }
-
-    function protocolFeeNumerator() public view override returns (uint256) {
-        return _protocolFeeNumerator;
-    }
-
-    function protocolFeeDenominator() public view override returns (uint256) {
-        return _protocolFeeDenominator;
+    function owner() public view override returns (address) {
+        return _owner;
     }
 
     function changeProtocolWallet(address newProtocolWallet)
@@ -51,6 +44,14 @@ contract Admin is IAdmin {
         emit ProtocolFeeChanged(feeNumerator, feeDenominator);
     }
 
+    function addPaymentToken(address paymentToken) external override onlyOwner {
+        // check if payment token is in isPaymentToken
+        require(!isPaymentToken(paymentToken), "Payment token already added");
+        require(paymentToken != address(0), "0x00 not allowed");
+        _isPaymentToken[paymentToken] = true;
+        emit PaymentTokenAdded(paymentToken);
+    }
+
     function isPaymentToken(address paymentToken)
         public
         view
@@ -60,12 +61,16 @@ contract Admin is IAdmin {
         return _isPaymentToken[paymentToken];
     }
 
-    function addPaymentToken(address paymentToken) external override onlyOwner {
-        // check if payment token is in isPaymentToken
-        require(!isPaymentToken(paymentToken), "Payment token already added");
-        require(paymentToken != address(0), "0x00 not allowed");
-        _isPaymentToken[paymentToken] = true;
-        emit PaymentTokenAdded(paymentToken);
+    function protocolWallet() public view override returns (address) {
+        return _protocolWallet;
+    }
+
+    function protocolFeeNumerator() public view override returns (uint256) {
+        return _protocolFeeNumerator;
+    }
+
+    function protocolFeeDenominator() public view override returns (uint256) {
+        return _protocolFeeDenominator;
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -74,6 +79,8 @@ contract Admin is IAdmin {
         override
         returns (bool)
     {
-        return (interfaceId == type(IAdmin).interfaceId);
+        return
+            interfaceId == type(IAdmin).interfaceId ||
+            interfaceId == type(IERC165).interfaceId;
     }
 }

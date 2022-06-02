@@ -11,7 +11,7 @@ contract MultiplaceProxy is Storage, Proxy {
 
     constructor(address _currentMarketplace) {
         currentMarketplace = _currentMarketplace;
-        admin = new Admin();
+        admin = new Admin(msg.sender);
         listings = new Listings();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(RESERVER_ROLE, msg.sender);

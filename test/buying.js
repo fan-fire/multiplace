@@ -666,6 +666,8 @@ describe("Buying", async (accounts) => {
       tokenId
     );
 
+    let totalRoyalties = totalPrice.mul(10).div(100); //10% set in NFT contract
+
     let [receiver, unitRoyaltyAmount] = royalties;
 
     expect(receiver).to.be.equal(
@@ -674,7 +676,7 @@ describe("Buying", async (accounts) => {
     );
 
     expect(unitRoyaltyAmount.toString()).to.be.equal(
-      totalPrice.mul(10).div(100).toString(),
+      totalRoyalties.toString(),
       "royalty amount should be 10% of totalPrice"
     );
 
@@ -711,15 +713,16 @@ describe("Buying", async (accounts) => {
       paymentToken,
       sellerAddr
     );
+
     expect(sellerMarketplaceBalance.toString()).to.be.equal(
-      totalPrice.sub(protocolFee).sub(unitRoyaltyAmount).toString(),
+      totalPrice.sub(protocolFee).sub(totalRoyalties).toString(),
       "seller should have the correct balance"
     );
 
     let ownerBalance = await multiplace.getBalance(paymentToken, owner.address);
 
     expect(ownerBalance.toString()).to.be.equal(
-      unitRoyaltyAmount.toString(),
+      totalRoyalties.add(protocolFee).toString(),
       "owner should have the correct balance"
     );
 
@@ -758,6 +761,8 @@ describe("Buying", async (accounts) => {
       tokenId
     );
 
+    let totalRoyalties = totalPrice.mul(10).div(100); //10% set in NFT contract
+
     let [receiver, unitRoyaltyAmount] = unitRoyalties;
 
     expect(receiver).to.be.equal(
@@ -797,14 +802,14 @@ describe("Buying", async (accounts) => {
       sellerAddr
     );
     expect(sellerMarketplaceBalance.toString()).to.be.equal(
-      totalPrice.sub(protocolFee).sub(unitRoyaltyAmount).toString(),
+      totalPrice.sub(protocolFee).sub(totalRoyalties).toString(),
       "seller marketplace balance should be totalPrice minus protocol fee"
     );
 
     let ownerBalance = await multiplace.getBalance(paymentToken, owner.address);
 
     expect(ownerBalance.toString()).to.be.equal(
-      unitRoyaltyAmount.toString(),
+      totalRoyalties.add(protocolFee).toString(),
       "owner balance should be unitRoyaltyAmount"
     );
 
@@ -843,6 +848,8 @@ describe("Buying", async (accounts) => {
       tokenId
     );
 
+    let totalRoyalties = totalPrice.mul(10).div(100); //10% set in NFT contract
+
     let [receiver, unitRoyaltyAmount] = unitRoyalties;
 
     expect(receiver).to.be.equal(
@@ -882,14 +889,14 @@ describe("Buying", async (accounts) => {
       sellerAddr
     );
     expect(sellerMarketplaceBalance.toString()).to.be.equal(
-      totalPrice.sub(protocolFee).sub(unitRoyaltyAmount).toString(),
+      totalPrice.sub(protocolFee).sub(totalRoyalties).toString(),
       "seller marketplace balance should be totalPrice minus protocol fee"
     );
 
     let ownerBalance = await multiplace.getBalance(paymentToken, owner.address);
 
     expect(ownerBalance.toString()).to.be.equal(
-      unitRoyaltyAmount.toString(),
+      totalRoyalties.add(protocolFee).toString(),
       "owner balance should be unitRoyaltyAmount"
     );
 

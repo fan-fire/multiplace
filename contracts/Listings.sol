@@ -462,6 +462,8 @@ contract Listings is IListings {
         override
         returns (bool)
     {
-        return (interfaceId == type(IListings).interfaceId);
+        return
+            interfaceId == type(IListings).interfaceId ||
+            interfaceId == type(IERC165).interfaceId;
     }
 }
