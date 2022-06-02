@@ -18,10 +18,11 @@ contract Admin is IAdmin {
         require(msg.sender == _owner, "Not owner contract");
         _;
     }
-    
-    function owner() public view override returns (address){
+
+    function owner() public view override returns (address) {
         return _owner;
     }
+
     function changeProtocolWallet(address newProtocolWallet)
         external
         override

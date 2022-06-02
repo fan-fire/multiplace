@@ -10,7 +10,7 @@ const {
   PROTOCOL_FEE_DEN,
   PROTOCOL_FEE_NUM,
   DEFAULT_ADMIN_ROLE,
-  getInterfaceID
+  getInterfaceID,
 } = require("./utils");
 const ether = require("@openzeppelin/test-helpers/src/ether");
 
@@ -289,14 +289,15 @@ describe("Admin", async (accounts) => {
     let admin = await Admin.attach(adminAddr);
     // const IAdmin = await ethers.getContractFactory("IAdmin");
 
-    const IERC165 = await ethers.getContractFactory(require('../artifacts/@openzeppelin/contracts/utils/introspection/ERC165.sol/ERC165.json').abi)
-  
+    const IERC165 = await ethers.getContractFactory(
+      require("../artifacts/@openzeppelin/contracts/utils/introspection/ERC165.sol/ERC165.json")
+        .abi
+    );
 
-  let interfaceId165 = getInterfaceID(IERC165.interface);
-  console.log(`interfaceId165: ${interfaceId165}`)
-  let interfaceId = getInterfaceID(admin.interface);
-  console.log(`interfaceId: ${interfaceId}`)
-
+    let interfaceId165 = getInterfaceID(IERC165.interface);
+    console.log(`interfaceId165: ${interfaceId165}`);
+    let interfaceId = getInterfaceID(admin.interface);
+    console.log(`interfaceId: ${interfaceId}`);
   });
 
   it.skip("Can't change protocol wallet to ZERO_ADDRESS", async () => {});
