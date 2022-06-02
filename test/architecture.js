@@ -29,9 +29,9 @@ describe("Architecture", async () => {
   });
 
   it("Can deploy admin", async () => {
-    let [owner] = await ethers.getSigners();
+    let [owner, acc1] = await ethers.getSigners();
     const Admin = await ethers.getContractFactory("Admin");
-    let admin = await Admin.deploy();
+    let admin = await Admin.deploy(acc1.address);
     await admin.deployed();
 
     let adminOwner = await admin.owner();
