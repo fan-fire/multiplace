@@ -269,15 +269,39 @@ describe("Reserving", async () => {
     expect(ownerOf).to.be.equal(lister.address);
   });
 
-  it("addrSeller1 is the owner of all 4 NFTs set up in before each", async () => {});
-  it("can buy 721 if not reserved", async () => {});
-  it("can buy 1155 if not reserved", async () => {});
-  it("can't buy 721 if reserved", async () => {});
-  it("can't buy 1155 if reserved", async () => {});
-  it("can buy 721 if reserved with reservedFor account", async () => {});
-  it("can buy 1155 if reserved with reservedFor account", async () => {});
-  it("can buy 721 if reserved with any account if reserve period has passed", async () => {});
-  it("can buy 1155 if reserved with any account if reserve period has passed", async () => {});
-  it("fails if you don't have rerver role", async () => {});
-  it("can't set period greater than MAX_RESERVE_PERIOD", async () => {});
+  it("can buy 721 if not reserved", async () => {
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 0;
+  });
+
+  xit("Default reserve is 0", async () => {});
+
+  xit("can buy 1155 if not reserved", async () => {});
+  xit("can buy 721_2981 if not reserved", async () => {});
+  xit("can buy 1155_2981 if not reserved", async () => {});
+
+  xit("can't buy 721 if reserved", async () => {});
+  xit("can't buy 1155 if reserved", async () => {});
+  xit("can't buy 721_2981 if reserved", async () => {});
+  xit("can't buy 1155_2981 if reserved", async () => {});
+  xit("can't buy partial 1155_2981 if reserved", async () => {});
+
+  xit("can buy 721 if reserved with reservedFor account", async () => {});
+  xit("can buy 1155 if reserved with reservedFor account", async () => {});
+  xit("can buy 721_2981 if reserved with reservedFor account", async () => {});
+  xit("can buy 1155_2981 if reserved with reservedFor account", async () => {});
+  xit("can buy partial 1155 if reserved with reservedFor account", async () => {});
+  xit("can buy partial 1155_2981 if reserved with reservedFor account", async () => {});
+
+  xit("can buy 721 if reserved with any account if reserve period has passed", async () => {});
+  xit("can buy 1155 if reserved with any account if reserve period has passed", async () => {});
+  xit("can buy 721_2981 if reserved with any account if reserve period has passed", async () => {});
+  xit("can buy 1155_2981 if reserved with any account if reserve period has passed", async () => {});
+  xit("can buy partial 1155 if reserved with any account if reserve period has passed", async () => {});
+  xit("can buy partial 1155_2981 if reserved with any account if reserve period has passed", async () => {});
+
+  xit("fails if you reserve without the rerver role through Multiplace", async () => {});
+  xit("fails if you reserve directly on Listings", async () => {});
+
+  xit("can't set period greater than MAX_RESERVE_PERIOD", async () => {});
 });
