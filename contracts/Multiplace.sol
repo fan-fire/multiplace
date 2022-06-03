@@ -207,7 +207,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         uint256 tokenId,
         uint256 period,
         address reservee
-    ) external override {
+    ) external override onlyRole(RESERVER_ROLE) {
         listings.reserve(seller, tokenAddr, tokenId, period, reservee);
     }
 

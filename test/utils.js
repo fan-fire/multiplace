@@ -23,6 +23,10 @@ const listingToObject = (listing) => {
 
 const DEFAULT_ADMIN_ROLE = ethers.utils.formatBytes32String(0);
 const ADMIN_ROLE = ethers.utils.solidityKeccak256(["string"], ["ADMIN_ROLE"]);
+const RESERVER_ROLE = ethers.utils.solidityKeccak256(
+  ["string"],
+  ["RESERVER_ROLE"]
+);
 const PROTOCOL_FEE_DEN = ethers.BigNumber.from("10000000000000");
 const PROTOCOL_FEE_NUM = ethers.BigNumber.from("250000000000");
 
@@ -38,6 +42,7 @@ module.exports = {
   listingToObject,
   DEFAULT_ADMIN_ROLE,
   ADMIN_ROLE,
+  RESERVER_ROLE,
   PROTOCOL_FEE_DEN,
   PROTOCOL_FEE_NUM,
 };
