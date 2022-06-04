@@ -88,6 +88,13 @@ interface IMultiplace is IERC165 {
         address reservee
     ) external;
 
+    function updateRoyalties(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId,
+        uint256 newRoyaltyAmount
+    ) external;
+
     function getReservedState(
         address seller,
         address tokenAddr,

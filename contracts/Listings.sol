@@ -291,6 +291,42 @@ contract Listings is IListings {
         return true;
     }
 
+    function updateRoyalties(
+        address updater,
+        address seller,
+        address tokenAddr,
+        uint256 tokenId,
+        uint256 newRoyaltyAmount
+    ) public onlyOwner {
+        require(_isListed[tokenAddr][tokenId], "NFT not listed");
+        Royalty memory royalty = getUnitRoyalties(seller, tokenAddr, tokenId);
+        require(royalty.receiver != address(0), "Token has no owner");
+        require(royalty.receiver == updater, "Only royalty receiver");
+        require(royalty.unitRoyaltyAmount != amount, "Invalid amount");
+
+        Listing memory listing = getListing(tokenAddr, tokenId);
+
+        if (
+            listing.nftType == NFT_TYPE.ERC721_2981 ||
+            listing.nftType == NFT_TYPE.ERC1155_2981
+        ) {
+            address receiver;
+            uint256 royaltyAmount;
+            (receiver, royaltyAmount) = IERC2981(tokenAddr).royaltyInfo(
+                tokenId,
+                listing.price
+            );
+            royalty.receiver = receiver;
+            royalty.unitRoyaltyAmount = royaltyAmount;
+        } else {
+            uint256 curRoyaltyAmount = royalty.unitRoyaltyAmount;
+            royalty.unitRoyaltyAmount = newRoyaltyAmount;
+            listing.price = listing.price - curRoyaltyAmount + newRoyaltyAmount;
+            _listings[listing.listPtr] = listing;
+        }
+        _unitRoyalties[seller][tokenAddr][tokenId] = royalty;
+    }
+
     function status(
         address seller,
         address tokenAddr,

@@ -307,18 +307,10 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         emit FundsWithdrawn(msg.sender, paymentToken, amount);
     }
 
-    /**
-     * @dev Method to pause the marketplace.
-     *
-     */
     function pause() public onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
-    /**
-     * @dev Method to unpause the marketplace.
-     *
-     */
     function unpause() public onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
@@ -333,6 +325,21 @@ contract Multiplace is IMultiplace, Storage, Pausable {
             "Payment token already added"
         );
         admin.addPaymentToken(paymentToken);
+    }
+
+    function updateRoyalties(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId,
+        uint256 newRoyaltyAmount
+    ) public {
+        listings.updateRoyalties(
+            msg.sender,
+            seller,
+            tokenAddr,
+            tokenId,
+            newRoyaltyAmount
+        );
     }
 
     function isPaymentToken(address paymentToken)
