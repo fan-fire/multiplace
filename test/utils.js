@@ -1,5 +1,11 @@
 const { ethers } = require("hardhat");
 
+Array.prototype.forEachAsync = async function (fn) {
+  for (let t of this) {
+    await fn(t);
+  }
+};
+
 const listingToObject = (listing) => {
   return {
     listPtr: listing.listPtr.toNumber(),
@@ -17,29 +23,12 @@ const listingToObject = (listing) => {
 
 const DEFAULT_ADMIN_ROLE = ethers.utils.formatBytes32String(0);
 const ADMIN_ROLE = ethers.utils.solidityKeccak256(["string"], ["ADMIN_ROLE"]);
-const PROTOCOL_FEE_DEN = ethers.BigNumber.from("100000000000000");
-const PROTOCOL_FEE_NUM = ethers.BigNumber.from("2500000000000");
-
-function getInterfaceID(contractInterface) {
-  console.log("=======================");
-  let interfaceID = ethers.constants.Zero;
-  const functions = Object.keys(contractInterface.functions);
-  console.log(functions);
-  for (let i = 0; i < functions.length; i++) {
-    let f = functions[i];
-    let func = contractInterface.functions[f];
-    console.log(f);
-
-    // console.log(contractInterface.functions[functions[i]]);
-    let signhash = ethers.utils.id(f).substring(0, 10);
-    // let signhash = contractInterface.functions[functions[i]].sighash;
-    console.log(`${functions[i]}: ${signhash}`);
-    interfaceID = interfaceID.xor(signhash);
-    console.log(`\t\t\t\t\tinterfaceID: ${interfaceID.toHexString()}`);
-  }
-
-  return interfaceID.toHexString();
-}
+const RESERVER_ROLE = ethers.utils.solidityKeccak256(
+  ["string"],
+  ["RESERVER_ROLE"]
+);
+const PROTOCOL_FEE_DEN = ethers.BigNumber.from("10000000000000");
+const PROTOCOL_FEE_NUM = ethers.BigNumber.from("250000000000");
 
 const NFT_TYPE = {
   ERC721: 0,
@@ -53,7 +42,7 @@ module.exports = {
   listingToObject,
   DEFAULT_ADMIN_ROLE,
   ADMIN_ROLE,
+  RESERVER_ROLE,
   PROTOCOL_FEE_DEN,
   PROTOCOL_FEE_NUM,
-  getInterfaceID,
 };

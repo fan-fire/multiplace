@@ -18,7 +18,7 @@ Array.prototype.forEachAsync = async function (fn) {
   }
 };
 
-describe("Buying", async (accounts) => {
+describe("Buying", async () => {
   let owner;
   let buyer1;
   let buyer2;

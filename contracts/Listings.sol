@@ -9,6 +9,7 @@ import "./IListings.sol";
 contract Listings is IListings {
     using ERC165Checker for address;
 
+    uint256 public constant MAX_RESERVE_PERIOD = 24 * 60 * 60; /// can only reserve for a max of 1 day
     address public owner;
     uint256 public numListings; //Number of listings in the marketplace
     Listing[] internal _listings; //Listings of the marketplace
@@ -206,7 +207,7 @@ contract Listings is IListings {
     ) public override onlyOwner returns (bool) {
         Listing memory listing = getListing(seller, tokenAddr, tokenId);
         // check reserving
-        require(block.timestamp >= listing.reservedUntil, "NFT reserved");
+
         require(listing.amount >= amount, "Not enough amount");
 
         // check if listing is still valid
@@ -413,8 +414,17 @@ contract Listings is IListings {
         uint256 tokenId,
         uint256 period,
         address reservee
-    ) external override {
-        uint256 a = 3;
+    ) external override onlyOwner {
+        require(period < MAX_RESERVE_PERIOD, "Invalid period");
+        require(_isListed[seller][tokenAddr][tokenId], "NFT not listed");
+
+        Listing memory listing = getListing(seller, tokenAddr, tokenId);
+
+        listing.reservedFor = reservee;
+        listing.reservedUntil = block.timestamp + period;
+
+        _listings[listing.listPtr] = listing;
+        // emit Reserved(nftAddress, tokenId, reservee, period, block.timestamp + period);
     }
 
     function getReservedState(
