@@ -77,11 +77,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         uint256 totalPrice = listing.unitPrice * amount;
         address paymentToken = listing.paymentToken;
 
-        // console.log("totalPrice %s", totalPrice);
-        // console.log("paymentToken %s", paymentToken);
-
         uint256 balance = IERC20(paymentToken).balanceOf(msg.sender);
-        // console.log("balance %s", balance);
 
         require(balance >= totalPrice, "Insufficient funds");
         // check if marketplace is allowed to transfer payment token
@@ -176,23 +172,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         );
     }
 
-    function status(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId
-    )
-        public
-        view
-        override
-        returns (
-            bool isSellerOwner,
-            bool isTokenStillApproved,
-            IListings.Listing memory listing
-        )
-    {
-        return (listings.status(seller, tokenAddr, tokenId));
-    }
-
     function unlistStale(
         address seller,
         address tokenAddr,
@@ -225,64 +204,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         whenNotPaused
     {
         listings.unlist(msg.sender, tokenAddr, tokenId);
-    }
-
-    function getListingPointer(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId
-    ) external view override returns (uint256 listPtr) {
-        require(
-            listings.isListed(msg.sender, tokenAddr, tokenId),
-            "Token not listed"
-        );
-        return listings.getListingPointer(seller, tokenAddr, tokenId);
-    }
-
-    // Method that checks if seller has listed tokenAddr:tokenId
-    function isListed(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId
-    ) public view override returns (bool listed) {
-        return listings.isListed(seller, tokenAddr, tokenId);
-    }
-
-    function getListingByPointer(uint256 listPtr)
-        external
-        view
-        override
-        returns (IListings.Listing memory listing)
-    {
-        return listings.getListingByPointer(listPtr);
-    }
-
-    function getListing(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId
-    ) public view override returns (IListings.Listing memory listing) {
-        return listings.getListing(seller, tokenAddr, tokenId);
-    }
-
-    function getAllListings()
-        external
-        view
-        override
-        returns (IListings.Listing[] memory)
-    {
-        // return new IListings.Listing[](0);
-        return listings.getAllListings();
-    }
-
-    function getBalance(address paymentToken, address account)
-        external
-        view
-        override
-        returns (uint256 balance)
-    {
-        require(admin.isPaymentToken(paymentToken), "Unkown payment token");
-        return _balances[paymentToken][account];
     }
 
     function pullFunds(address paymentToken, uint256 amount) external override {
@@ -342,6 +263,75 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         );
     }
 
+    function changeProtocolWallet(address newProtocolWallet)
+        public
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        admin.changeProtocolWallet(newProtocolWallet);
+    }
+
+    function changeProtocolFee(uint256 feeNumerator, uint256 feeDenominator)
+        public
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        admin.changeProtocolFee(feeNumerator, feeDenominator);
+    }
+
+    function getListingPointer(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external view override returns (uint256 listPtr) {
+        return listings.getListingPointer(seller, tokenAddr, tokenId);
+    }
+
+    // Method that checks if seller has listed tokenAddr:tokenId
+    function isListed(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) public view override returns (bool listed) {
+        return listings.isListed(seller, tokenAddr, tokenId);
+    }
+
+    function getListingByPointer(uint256 listPtr)
+        external
+        view
+        override
+        returns (IListings.Listing memory listing)
+    {
+        return listings.getListingByPointer(listPtr);
+    }
+
+    function getListing(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) public view override returns (IListings.Listing memory listing) {
+        return listings.getListing(seller, tokenAddr, tokenId);
+    }
+
+    function getAllListings()
+        external
+        view
+        override
+        returns (IListings.Listing[] memory)
+    {
+        return listings.getAllListings();
+    }
+
+    function getBalance(address paymentToken, address account)
+        external
+        view
+        override
+        returns (uint256 balance)
+    {
+        require(admin.isPaymentToken(paymentToken), "Unkown payment token");
+        return _balances[paymentToken][account];
+    }
+
     function isPaymentToken(address paymentToken)
         public
         view
@@ -384,6 +374,23 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         }
     }
 
+    function status(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    )
+        public
+        view
+        override
+        returns (
+            bool isSellerOwner,
+            bool isTokenStillApproved,
+            IListings.Listing memory listing
+        )
+    {
+        return (listings.status(seller, tokenAddr, tokenId));
+    }
+
     function supportsInterface(bytes4 interfaceId)
         public
         view
@@ -395,22 +402,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
             interfaceId == type(IAccessControl).interfaceId ||
             interfaceId == type(IERC165).interfaceId ||
             super.supportsInterface(interfaceId);
-    }
-
-    function changeProtocolWallet(address newProtocolWallet)
-        public
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        admin.changeProtocolWallet(newProtocolWallet);
-    }
-
-    function changeProtocolFee(uint256 feeNumerator, uint256 feeDenominator)
-        public
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        admin.changeProtocolFee(feeNumerator, feeDenominator);
     }
 
     function protocolFeeNumerator() public view override returns (uint256) {
