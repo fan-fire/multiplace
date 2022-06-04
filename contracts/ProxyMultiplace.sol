@@ -9,20 +9,19 @@ import "./Admin.sol";
 contract MultiplaceProxy is Storage, Proxy {
     event Upgraded(address newAddress);
 
-    constructor(address _currentMarketplace) {
-        currentMarketplace = _currentMarketplace;
+    constructor(address _currentMultiplace) {
+        currentMultiplace = _currentMultiplace;
         admin = new Admin(msg.sender);
         listings = new Listings();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(RESERVER_ROLE, msg.sender);
     }
 
     function upgrade(address _newAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        currentMarketplace = _newAddress;
+        currentMultiplace = _newAddress;
         emit Upgraded(_newAddress);
     }
 
     function _implementation() internal view override returns (address) {
-        return currentMarketplace;
+        return currentMultiplace;
     }
 }

@@ -66,8 +66,8 @@ describe("Architecture", async () => {
     );
     expect(hasAdmin).to.be.true;
 
-    let currentMarketplaceAddress = await multiplaceProxy.currentMarketplace();
-    expect(currentMarketplaceAddress).to.equal(multiplace.address);
+    let currentMultiplaceAddress = await multiplaceProxy.currentMultiplace();
+    expect(currentMultiplaceAddress).to.equal(multiplace.address);
   });
 
   it("Can get listings from marketplace via proxy", async () => {
