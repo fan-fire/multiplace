@@ -401,10 +401,7 @@ contract Listings is IListings {
         // unlist
         // emit UnlistStale(tokenAddr, tokenId);
 
-        require(
-            _unlist(listing),
-            "NFT could not be unlisted"
-        );
+        require(_unlist(listing), "NFT could not be unlisted");
     }
 
     function getSellers(address tokenAddr, uint256 tokenId)
