@@ -414,7 +414,7 @@ contract Listings is IListings {
         uint256 tokenId,
         uint256 period,
         address reservee
-    ) external override {
+    ) external override onlyOwner {
         require(period < MAX_RESERVE_PERIOD, "Invalid period");
         require(_isListed[seller][tokenAddr][tokenId], "NFT not listed");
 
