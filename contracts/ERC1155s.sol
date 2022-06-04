@@ -32,6 +32,7 @@ contract ERC1155Mock is ERC1155, Ownable {
 
 contract ERC1155WithERC2981Mock is ERC1155, IERC2981, Ownable {
     address private _recipient;
+    uint256 private _royaltyPercentage = 10;
 
     constructor() ERC1155("") {
         _recipient = owner();
@@ -45,27 +46,30 @@ contract ERC1155WithERC2981Mock is ERC1155, IERC2981, Ownable {
         _mint(to, tokenId, amount, "");
     }
 
-    // EIP2981 standard royalties return.
     function royaltyInfo(uint256 _tokenId, uint256 _salePrice)
         external
         view
         override
         returns (address receiver, uint256 royaltyAmount)
     {
-        return (_recipient, (_salePrice * 1000) / 10000);
-    }
-
-    // Maintain flexibility to modify royalties recipient (could also add basis points).
-    function _setRoyalties(address newRecipient) internal {
-        require(
-            newRecipient != address(0),
-            "Royalties: new recipient is the zero address"
+        return (
+            _recipient,
+            (_salePrice * _royaltyPercentage) / 100 + _tokenId * 0
         );
-        _recipient = newRecipient;
     }
 
-    function setRoyalties(address newRecipient) external onlyOwner {
-        _setRoyalties(newRecipient);
+    function _setRoyalties(address newRecipient, uint256 newPercentage)
+        internal
+    {
+        _recipient = newRecipient;
+        _royaltyPercentage = newPercentage;
+    }
+
+    function setRoyalties(address newRecipient, uint256 newPercentage)
+        external
+        onlyOwner
+    {
+        _setRoyalties(newRecipient, newPercentage);
     }
 
     // EIP2981 standard Interface return. Adds to ERC1155 and ERC165 Interface returns.

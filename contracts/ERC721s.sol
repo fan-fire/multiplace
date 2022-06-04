@@ -40,6 +40,7 @@ contract ERC721WithERC2981Mock is ERC721URIStorage, IERC2981, Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
     address private _recipient;
+    uint256 private _royaltyPercentage = 10;
 
     constructor() ERC721("TOKEN", "TKN") {
         _recipient = owner();
@@ -59,20 +60,24 @@ contract ERC721WithERC2981Mock is ERC721URIStorage, IERC2981, Ownable {
         override
         returns (address receiver, uint256 royaltyAmount)
     {
-        return (_recipient, (_salePrice * 1000) / 10000 + _tokenId * 0);
-    }
-
-    // Maintain flexibility to modify royalties recipient (could also add basis points).
-    function _setRoyalties(address newRecipient) internal {
-        require(
-            newRecipient != address(0),
-            "Royalties: new recipient is the zero address"
+        return (
+            _recipient,
+            (_salePrice * _royaltyPercentage) / 100 + _tokenId * 0
         );
-        _recipient = newRecipient;
     }
 
-    function setRoyalties(address newRecipient) external onlyOwner {
-        _setRoyalties(newRecipient);
+    function _setRoyalties(address newRecipient, uint256 newPercentage)
+        internal
+    {
+        _recipient = newRecipient;
+        _royaltyPercentage = newPercentage;
+    }
+
+    function setRoyalties(address newRecipient, uint256 newPercentage)
+        external
+        onlyOwner
+    {
+        _setRoyalties(newRecipient, newPercentage);
     }
 
     // EIP2981 standard Interface return. Adds to ERC1155 and ERC165 Interface returns.
