@@ -297,14 +297,14 @@ contract Listings is IListings {
         address tokenAddr,
         uint256 tokenId,
         uint256 newRoyaltyAmount
-    ) public onlyOwner {
-        require(_isListed[tokenAddr][tokenId], "NFT not listed");
+    ) public override onlyOwner {
+        require(_isListed[seller][tokenAddr][tokenId], "NFT not listed");
         Royalty memory royalty = getUnitRoyalties(seller, tokenAddr, tokenId);
         require(royalty.receiver != address(0), "Token has no owner");
         require(royalty.receiver == updater, "Only royalty receiver");
-        require(royalty.unitRoyaltyAmount != amount, "Invalid amount");
+        require(royalty.unitRoyaltyAmount != newRoyaltyAmount, "Invalid amount");
 
-        Listing memory listing = getListing(tokenAddr, tokenId);
+        Listing memory listing = getListing(seller, tokenAddr, tokenId);
 
         if (
             listing.nftType == NFT_TYPE.ERC721_2981 ||
@@ -314,15 +314,12 @@ contract Listings is IListings {
             uint256 royaltyAmount;
             (receiver, royaltyAmount) = IERC2981(tokenAddr).royaltyInfo(
                 tokenId,
-                listing.price
+                listing.unitPrice
             );
             royalty.receiver = receiver;
             royalty.unitRoyaltyAmount = royaltyAmount;
         } else {
-            uint256 curRoyaltyAmount = royalty.unitRoyaltyAmount;
             royalty.unitRoyaltyAmount = newRoyaltyAmount;
-            listing.price = listing.price - curRoyaltyAmount + newRoyaltyAmount;
-            _listings[listing.listPtr] = listing;
         }
         _unitRoyalties[seller][tokenAddr][tokenId] = royalty;
     }

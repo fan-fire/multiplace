@@ -332,7 +332,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         address tokenAddr,
         uint256 tokenId,
         uint256 newRoyaltyAmount
-    ) public {
+    ) public override  {
         listings.updateRoyalties(
             msg.sender,
             seller,
