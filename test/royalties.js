@@ -516,7 +516,7 @@ describe("Royalties", async () => {
     let receiver2981 = royalties2981.receiver;
     let royaltyAmount2981 = royalties2981.royaltyAmount;
 
-    let { receiver, unitRoyaltyAmount } = await multiplace.getUnitRoyalties(
+    var { receiver, unitRoyaltyAmount } = await multiplace.getUnitRoyalties(
       sellerAddr,
       tokenAddr,
       tokenId
@@ -526,6 +526,48 @@ describe("Royalties", async () => {
       royaltyAmount2981.toString()
     );
     expect(receiver).to.be.equal(receiver2981);
+
+    let newRecipient = acc1.address;
+    let newPercentage = 15;
+    await erc721With2981Mock.setRoyalties(newRecipient, newPercentage);
+
+    listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    expect(unitRoyaltyAmount.toString()).to.be.equal(
+      royaltyAmount2981.toString(),
+      "unitRoyaltyAmount should not have changed yet as updateRoyalties hasn't been called"
+    );
+    expect(receiver).to.be.equal(receiver2981);
+
+    royalties2981 = await erc721With2981Mock.royaltyInfo(
+      tokenId,
+      listing.unitPrice
+    );
+
+    receiver2981 = royalties2981.receiver;
+    royaltyAmount2981 = royalties2981.royaltyAmount;
+
+    let newRoyaltyAmount = listing.unitPrice.mul(newPercentage).div(100);
+
+    expect(royaltyAmount2981.toString()).to.be.equal(
+      newRoyaltyAmount.toString(),
+      "royaltyAmount should have been updated"
+    );
+    expect(receiver2981).to.be.equal(newRecipient);
+
+    await multiplace.updateRoyalties(sellerAddr, tokenAddr, tokenId, 0);
+
+    var { receiver, unitRoyaltyAmount } = await multiplace.getUnitRoyalties(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+
+    expect(unitRoyaltyAmount.toString()).to.be.equal(
+      newRoyaltyAmount.toString(),
+      "unitRoyaltyAmount should not have changed yet as updateRoyalties hasn't been called"
+    );
+    expect(receiver).to.be.equal(newRecipient);
   });
   xit("Royalties in marketplace should update if 2891 royalties are updated and updateRoyalties is called on the multiplace for 1155", async () => {});
   xit("can update royalties if you are the owner for 721 when not 2981", async () => {});
