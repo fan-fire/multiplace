@@ -7,7 +7,7 @@ import "./IMultiplace.sol";
 import "./IAdmin.sol";
 
 abstract contract Storage is AccessControl {
-    address public currentMarketplace;
+    address public currentMultiplace;
     bytes32 public constant RESERVER_ROLE = keccak256("RESERVER_ROLE");
     address public _protocolWallet;
     mapping(address => bool) internal _isPaymentToken; //Whether a given ERC20 contract is an excepted payment token
