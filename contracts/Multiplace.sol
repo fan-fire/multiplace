@@ -204,6 +204,10 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         override
         whenNotPaused
     {
+        require(
+            listings.isListed(msg.sender, tokenAddr, tokenId),
+            "Token not listed for msg.sender"
+        );
         listings.unlist(msg.sender, tokenAddr, tokenId);
     }
 
@@ -311,6 +315,10 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         address tokenAddr,
         uint256 tokenId
     ) public view override returns (IListings.Listing memory listing) {
+        require(
+            listings.isListed(seller, tokenAddr, tokenId),
+            "Token not listed"
+        );
         return listings.getListing(seller, tokenAddr, tokenId);
     }
 
