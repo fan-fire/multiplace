@@ -114,7 +114,7 @@ interface IListings is IERC165 {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external returns (address reservedFor, uint256 reservedUntil);
+    ) external view returns (address reservedFor, uint256 reservedUntil);
 
     function getSellers(address tokenAddr, uint256 tokenId)
         external

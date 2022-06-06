@@ -832,7 +832,7 @@ describe("Reserving", async () => {
 
     await expect(
       multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount)
-    ).to.be.revertedWith("NFT reserved");
+    ).to.be.revertedWith("Token reserved");
   });
 
   it("can't buy 1155 if reserved", async () => {
@@ -867,7 +867,7 @@ describe("Reserving", async () => {
 
     await expect(
       multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount)
-    ).to.be.revertedWith("NFT reserved");
+    ).to.be.revertedWith("Token reserved");
   });
 
   it("can't buy 721_2981 if reserved", async () => {
@@ -902,7 +902,7 @@ describe("Reserving", async () => {
 
     await expect(
       multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount)
-    ).to.be.revertedWith("NFT reserved");
+    ).to.be.revertedWith("Token reserved");
   });
   it("can't buy 1155_2981 if reserved", async () => {
     let sellerAddr = seller.address;
@@ -936,7 +936,7 @@ describe("Reserving", async () => {
 
     await expect(
       multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount)
-    ).to.be.revertedWith("NFT reserved");
+    ).to.be.revertedWith("Token reserved");
   });
 
   it("can't buy partial 1155_2981 if reserved", async () => {
@@ -971,7 +971,7 @@ describe("Reserving", async () => {
 
     await expect(
       multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount)
-    ).to.be.revertedWith("NFT reserved");
+    ).to.be.revertedWith("Token reserved");
   });
 
   it("can buy 721 if reserved with reservedFor account", async () => {

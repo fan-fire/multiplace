@@ -10,6 +10,7 @@ const {
   PROTOCOL_FEE_DEN,
   PROTOCOL_FEE_NUM,
   DEFAULT_ADMIN_ROLE,
+  RESERVER_ROLE,
 } = require("./utils");
 
 Array.prototype.forEachAsync = async function (fn) {
@@ -476,22 +477,509 @@ describe("Multiplace", async () => {
       multiplace.getListing(sellerAddr, tokenAddr, tokenId)
     ).to.be.revertedWith("Token not listed");
   });
-  xit("only the seller can unlist 1155", async () => {});
-  xit("can get the correct marketplace balance for a given address", async () => {});
-  xit("can pull funds for erc20 correctly", async () => {});
-  xit("fails if no pullFunds available", async () => {});
-  xit("pullFunds fails if erc20 token not added supported", async () => {});
-  xit("pullFunds fail if amount is 0", async () => {});
-  xit("can add ERC20 for payment token correctly", async () => {});
-  xit("front runner can't withdraw funds", async () => {});
-  xit("getListingPointer works as expected", async () => {});
-  xit("isListed works as expected", async () => {});
-  xit("getListingByPointer works as expected", async () => {});
-  xit("can't unlistStale if token is still owned and approved by seller or buyer", async () => {});
-  xit("can't unlist if token is reserved", async () => {});
-  xit("can unlist if token is not reserved", async () => {});
-  xit("can unlist if reserved time has passed", async () => {});
-  xit("getReservedState resturns correct state", async () => {});
-  xit("Listing is unlisted if 1 amount of 1155 is bought, then another 1 depleting listing amount", async () => {});
+  it("only the seller can unlist 1155", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc1155Mock.address;
+    let tokenId = 2;
 
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+    listing = listingToObject(listing);
+
+    expect(listing.tokenAddr).to.be.equal(tokenAddr);
+    expect(listing.tokenId).to.be.equal(tokenId);
+    expect(listing.seller).to.be.equal(sellerAddr);
+
+    await expect(
+      multiplace.connect(acc1).unlist(tokenAddr, tokenId)
+    ).to.be.revertedWith("Token not listed for msg.sender");
+
+    await multiplace.connect(seller).unlist(tokenAddr, tokenId);
+
+    await expect(
+      multiplace.getListing(sellerAddr, tokenAddr, tokenId)
+    ).to.be.revertedWith("Token not listed");
+  });
+  it("can get the correct marketplace balance for a given address", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721With2981Mock.address;
+    let tokenId = 2;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let amount = listing.amount;
+    let unitPrice = listing.unitPrice;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+    let buyer1BalanceB4 = await erc20Mock.balanceOf(buyer1.address);
+    let paymentToken = listing.paymentToken;
+    let protocolFee = totalPrice.mul(PROTOCOL_FEE_NUM).div(PROTOCOL_FEE_DEN);
+    let royalties = await multiplace.getUnitRoyalties(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+
+    let totalRoyalties = totalPrice.mul(10).div(100); //10% set in NFT contract
+
+    let [receiver, unitRoyaltyAmount] = royalties;
+
+    expect(receiver).to.be.equal(
+      owner.address,
+      "royalty receiver should be buyer1"
+    );
+
+    expect(unitRoyaltyAmount.toString()).to.be.equal(
+      totalRoyalties.toString(),
+      "royalty amount should be 10% of totalPrice"
+    );
+
+    expect(buyer1BalanceB4.toString()).to.be.equal(
+      ethers.utils.parseEther("10").toString(),
+      "buyer1 should have 10 ether of erc20 before purchase"
+    );
+
+    expect(paymentToken).to.be.equal(
+      erc20Mock.address,
+      "payment token should be erc20"
+    );
+
+    await erc20Mock.connect(buyer1).approve(multiplace.address, totalPrice);
+
+    await multiplace
+      .connect(buyer1)
+      .buy(sellerAddr, tokenAddr, tokenId, amount);
+
+    let buyer1Balance = await erc20Mock.balanceOf(buyer1.address);
+
+    expect(buyer1Balance.toString()).to.be.equal(
+      buyer1BalanceB4.sub(totalPrice).toString(),
+      "buyer1 should have 10 ether minus the total price of the purchase"
+    );
+
+    let ownerOfToken = await erc721With2981Mock.ownerOf(tokenId);
+    expect(ownerOfToken).to.be.equal(
+      buyer1.address,
+      "token should be owned by buyer1"
+    );
+
+    let sellerMarketplaceBalance = await multiplace.getBalance(
+      paymentToken,
+      sellerAddr
+    );
+
+    expect(sellerMarketplaceBalance.toString()).to.be.equal(
+      totalPrice.sub(protocolFee).sub(totalRoyalties).toString(),
+      "seller should have the correct balance"
+    );
+
+    let ownerBalance = await multiplace.getBalance(paymentToken, owner.address);
+
+    expect(ownerBalance.toString()).to.be.equal(
+      totalRoyalties.add(protocolFee).toString(),
+      "owner should have the correct balance"
+    );
+  });
+  it("can pull funds for erc20 correctly", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721With2981Mock.address;
+    let tokenId = 2;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let amount = listing.amount;
+    let unitPrice = listing.unitPrice;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+    let paymentToken = listing.paymentToken;
+
+    let ownerBalanceBefore = await erc20Mock.balanceOf(owner.address);
+    await erc20Mock.connect(buyer1).approve(multiplace.address, totalPrice);
+
+    await multiplace
+      .connect(buyer1)
+      .buy(sellerAddr, tokenAddr, tokenId, amount);
+
+    let ownerBalance = await multiplace.getBalance(paymentToken, owner.address);
+    await multiplace.connect(owner).pullFunds(paymentToken, ownerBalance);
+    let ownerBalanceERC20 = await erc20Mock.balanceOf(owner.address);
+    expect(ownerBalanceERC20.toString()).to.be.equal(
+      ownerBalance.add(ownerBalanceBefore).toString(),
+      "owner should have the correct balance"
+    );
+
+    let sellerMarketplaceBalance = await multiplace.getBalance(
+      paymentToken,
+      sellerAddr
+    );
+    await multiplace
+      .connect(seller)
+      .pullFunds(paymentToken, sellerMarketplaceBalance);
+    let sellerBalanceERC20 = await erc20Mock.balanceOf(seller.address);
+    expect(sellerBalanceERC20.toString()).to.be.equal(
+      sellerMarketplaceBalance.toString(),
+      "seller should have the correct balance"
+    );
+  });
+  it("fails if no pullFunds available", async () => {
+    let paymentToken = erc20Mock.address;
+    let randomAccountBalance = await multiplace.getBalance(
+      paymentToken,
+      acc1.address
+    );
+
+    expect(randomAccountBalance.toString()).to.be.equal(
+      "0",
+      "random account should have no balance"
+    );
+
+    await expect(
+      multiplace.connect(acc1).pullFunds(paymentToken, 1)
+    ).to.be.revertedWith("Insufficient funds");
+  });
+  it("pullFunds fails if erc20 token not added supported", async () => {
+    let paymentToken = acc1.address;
+    await expect(
+      multiplace.connect(acc1).pullFunds(paymentToken, 1)
+    ).to.be.revertedWith("Payment token not supported");
+  });
+  it("pullFunds fail if amount is 0", async () => {
+    let paymentToken = erc20Mock.address;
+    let amount = 0;
+    await expect(
+      multiplace.connect(acc1).pullFunds(paymentToken, amount)
+    ).to.be.revertedWith("Invalid amount");
+  });
+
+  it("getListingPointer works as expected", async () => {
+    let listings = await multiplace.getAllListings();
+    listings = listings.map(listingToObject);
+
+    let expectedListings = [];
+    let listPtr = 0;
+
+    await listingsToList.forEachAsync(async (listing) => {
+      for (let i = 0; i < listing["tokenIds"].length; i++) {
+        let tokenAddr = listing["tokenAddr"];
+        let tokenId = listing["tokenIds"][i];
+        let amount = listing["amounts"][i];
+        let unitPrice = listing["unitPrices"][i];
+        let paymentToken = listing["paymentToken"];
+        let nftType = listing["nftType"];
+
+        let listingToAdd = {
+          listPtr: listPtr,
+          tokenAddr: tokenAddr,
+          tokenId: tokenId,
+          seller: seller.address,
+          unitPrice: unitPrice.toString(),
+          amount: amount,
+          paymentToken: paymentToken,
+          nftType: nftType,
+          reservedUntil: 0,
+          reservedFor: constants.ZERO_ADDRESS,
+        };
+
+        let sellers = await multiplace.getSellers(tokenAddr, tokenId);
+
+        expect(sellers.length).to.be.equal(1);
+        expect(sellers[0]).to.be.equal(seller.address);
+
+        expectedListings.push(listingToAdd);
+        listPtr += 1;
+      }
+    });
+
+    await expectedListings.forEachAsync(async (listing) => {
+      let tokenAddr = listing["tokenAddr"];
+      let tokenId = listing["tokenId"];
+      let seller = listing["seller"];
+      let lstPtr = await multiplace.getListingPointer(
+        seller,
+        tokenAddr,
+        tokenId
+      );
+      expect(lstPtr.toString()).to.be.equal(listing["listPtr"].toString());
+    });
+  });
+
+  it("getListingPointer fails if token not listed", async () => {
+    let tokenAddr = acc1.address;
+    let tokenId = 0;
+    let sellerAddr = seller.address;
+    await expect(
+      multiplace.getListingPointer(sellerAddr, tokenAddr, tokenId)
+    ).to.be.revertedWith("Token not listed");
+  });
+
+  it("isListed works as expected", async () => {
+    let listings = await multiplace.getAllListings();
+    listings = listings.map(listingToObject);
+
+    let expectedListings = [];
+    let listPtr = 0;
+
+    await listingsToList.forEachAsync(async (listing) => {
+      for (let i = 0; i < listing["tokenIds"].length; i++) {
+        let tokenAddr = listing["tokenAddr"];
+        let tokenId = listing["tokenIds"][i];
+        let amount = listing["amounts"][i];
+        let unitPrice = listing["unitPrices"][i];
+        let paymentToken = listing["paymentToken"];
+        let nftType = listing["nftType"];
+
+        let listingToAdd = {
+          listPtr: listPtr,
+          tokenAddr: tokenAddr,
+          tokenId: tokenId,
+          seller: seller.address,
+          unitPrice: unitPrice.toString(),
+          amount: amount,
+          paymentToken: paymentToken,
+          nftType: nftType,
+          reservedUntil: 0,
+          reservedFor: constants.ZERO_ADDRESS,
+        };
+
+        let sellers = await multiplace.getSellers(tokenAddr, tokenId);
+
+        expect(sellers.length).to.be.equal(1);
+        expect(sellers[0]).to.be.equal(seller.address);
+
+        expectedListings.push(listingToAdd);
+        listPtr += 1;
+      }
+    });
+
+    await expectedListings.forEachAsync(async (listing) => {
+      let tokenAddr = listing["tokenAddr"];
+      let tokenId = listing["tokenId"];
+      let sellerAddr = listing["seller"];
+      let isListed = await multiplace.isListed(sellerAddr, tokenAddr, tokenId);
+      expect(isListed).to.be.equal(true);
+      await multiplace.connect(seller).unlist(tokenAddr, tokenId);
+      isListed = await multiplace.isListed(sellerAddr, tokenAddr, tokenId);
+      expect(isListed).to.be.equal(false);
+    });
+  });
+  it("getListingByPointer works as expected", async () => {
+    let listings = await multiplace.getAllListings();
+    listings = listings.map(listingToObject);
+
+    let expectedListings = [];
+    let listPtr = 0;
+
+    await listingsToList.forEachAsync(async (listing) => {
+      for (let i = 0; i < listing["tokenIds"].length; i++) {
+        let tokenAddr = listing["tokenAddr"];
+        let tokenId = listing["tokenIds"][i];
+        let amount = listing["amounts"][i];
+        let unitPrice = listing["unitPrices"][i];
+        let paymentToken = listing["paymentToken"];
+        let nftType = listing["nftType"];
+
+        let listingToAdd = {
+          listPtr: listPtr,
+          tokenAddr: tokenAddr,
+          tokenId: tokenId,
+          seller: seller.address,
+          unitPrice: unitPrice.toString(),
+          amount: amount,
+          paymentToken: paymentToken,
+          nftType: nftType,
+          reservedUntil: 0,
+          reservedFor: constants.ZERO_ADDRESS,
+        };
+
+        let sellers = await multiplace.getSellers(tokenAddr, tokenId);
+
+        expect(sellers.length).to.be.equal(1);
+        expect(sellers[0]).to.be.equal(seller.address);
+
+        expectedListings.push(listingToAdd);
+        listPtr += 1;
+      }
+    });
+
+    await expectedListings.forEachAsync(async (listing) => {
+      let listPtr = listing["listPtr"];
+      let listingFromContract = await multiplace.getListingByPointer(listPtr);
+
+      expect(listingFromContract.tokenAddr).to.be.equal(listing["tokenAddr"]);
+      expect(listingFromContract.tokenId).to.be.equal(listing["tokenId"]);
+      expect(listingFromContract.seller).to.be.equal(listing["seller"]);
+      expect(listingFromContract.unitPrice).to.be.equal(listing["unitPrice"]);
+      expect(listingFromContract.amount).to.be.equal(listing["amount"]);
+      expect(listingFromContract.paymentToken).to.be.equal(
+        listing["paymentToken"]
+      );
+      expect(listingFromContract.nftType).to.be.equal(listing["nftType"]);
+      expect(listingFromContract.reservedUntil).to.be.equal(
+        listing["reservedUntil"]
+      );
+      expect(listingFromContract.reservedFor).to.be.equal(
+        listing["reservedFor"]
+      );
+    });
+  });
+
+  it("getListingByPointer fails if pointer does not exist", async () => {
+    await expect(multiplace.getListingByPointer(100)).to.be.revertedWith(
+      "Invalid listing pointer"
+    );
+  });
+
+  it("can't unlistStale if token is still owned and approved by seller or buyer", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 2;
+
+    let isStillApproved = await erc721Mock.isApprovedForAll(
+      seller.address,
+      multiplace.address
+    );
+    expect(isStillApproved).to.be.equal(true);
+
+    let stillOwner = await erc721Mock.ownerOf(tokenId);
+    expect(stillOwner).to.be.equal(seller.address);
+
+    multiplace.unlistStale(sellerAddr, tokenAddr, tokenId);
+
+    let stillListed = await multiplace.isListed(sellerAddr, tokenAddr, tokenId);
+    expect(stillListed).to.be.equal(true);
+  });
+
+  it("can unlistStale if token if not approved anymore", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 2;
+    await erc721Mock
+      .connect(seller)
+      .setApprovalForAll(multiplace.address, false);
+    let isStillApproved = await erc721Mock.isApprovedForAll(
+      seller.address,
+      multiplace.address
+    );
+    expect(isStillApproved).to.be.equal(false);
+
+    await multiplace.unlistStale(sellerAddr, tokenAddr, tokenId);
+
+    let stillListed = await multiplace.isListed(sellerAddr, tokenAddr, tokenId);
+    expect(stillListed).to.be.equal(false);
+  });
+  it("can unlistStale if token is not owned by seller anymore", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 2;
+
+    await erc721Mock
+      .connect(seller)
+      ["safeTransferFrom(address,address,uint256)"](
+        seller.address,
+        acc1.address,
+        tokenId
+      );
+    let stillOwner = await erc721Mock.ownerOf(tokenId);
+    expect(stillOwner).to.be.equal(acc1.address);
+
+    await multiplace.unlistStale(sellerAddr, tokenAddr, tokenId);
+
+    let stillListed = await multiplace.isListed(sellerAddr, tokenAddr, tokenId);
+    expect(stillListed).to.be.equal(false);
+  });
+  it("can't unlist if token is reserved", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 2;
+
+    await multiplace.grantRole(RESERVER_ROLE, acc1.address);
+
+    let period = 100;
+    let reservee = acc2.address;
+
+    await multiplace
+      .connect(acc1)
+      .reserve(sellerAddr, tokenAddr, tokenId, period, reservee);
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    const now = (await ethers.provider.getBlock("latest")).timestamp;
+    let reservedUntil = now + period;
+
+    expect(listing.reservedUntil.toString()).to.be.equal(
+      reservedUntil.toString()
+    );
+    expect(listing.reservedFor).to.be.equal(reservee);
+
+    await expect(
+      multiplace.connect(seller).unlist(tokenAddr, tokenId)
+    ).to.be.revertedWith("Token reserved");
+  });
+
+  it("can unlist if reserved time has passed", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 2;
+
+    await multiplace.grantRole(RESERVER_ROLE, acc1.address);
+
+    let period = 100;
+    let reservee = acc2.address;
+
+    await multiplace
+      .connect(acc1)
+      .reserve(sellerAddr, tokenAddr, tokenId, period, reservee);
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    const now = (await ethers.provider.getBlock("latest")).timestamp;
+    let reservedUntil = now + period;
+
+    expect(listing.reservedUntil.toString()).to.be.equal(
+      reservedUntil.toString()
+    );
+    expect(listing.reservedFor).to.be.equal(reservee);
+
+    await hre.ethers.provider.send("evm_increaseTime", [period]);
+    await network.provider.send("evm_mine"); //Mine to let the increase time take effect on getBlock('latest')
+
+    await multiplace.connect(seller).unlist(tokenAddr, tokenId);
+  });
+  it("getReservedState resturns correct state", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 2;
+
+    let reservedState = await multiplace.getReservedState(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+
+    var { reservedFor, reservedUntil } = reservedState;
+    expect(reservedFor).to.be.equal(constants.ZERO_ADDRESS);
+    expect(reservedUntil.toString()).to.be.equal("0");
+
+    await multiplace.grantRole(RESERVER_ROLE, acc1.address);
+
+    let period = 100;
+    let reservee = acc2.address;
+
+    await multiplace
+      .connect(acc1)
+      .reserve(sellerAddr, tokenAddr, tokenId, period, reservee);
+    const now = (await ethers.provider.getBlock("latest")).timestamp;
+    let expectedReservedUntil = now + period;
+
+    reservedState = await multiplace.getReservedState(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+
+    var { reservedFor, reservedUntil } = reservedState;
+    expect(reservedFor).to.be.equal(reservee);
+    expect(reservedUntil.toString()).to.be.equal(
+      expectedReservedUntil.toString()
+    );
+  });
+  xit("Listing is unlisted if 1 amount of 1155 is bought, then another 1 depleting listing amount", async () => {});
+  xit("front runner can't withdraw funds", async () => {});
 });

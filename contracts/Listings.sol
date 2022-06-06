@@ -194,7 +194,7 @@ contract Listings is IListings {
         Listing memory listing = getListing(seller, tokenAddr, tokenId);
         // check reserving
 
-        require(block.timestamp >= listing.reservedUntil, "NFT reserved");
+        require(block.timestamp >= listing.reservedUntil, "Token reserved");
         assert(_unlist(listing));
     }
 
@@ -224,7 +224,7 @@ contract Listings is IListings {
 
         // check reserving
         if (block.timestamp < listing.reservedUntil) {
-            require(listing.reservedFor == buyer, "NFT reserved");
+            require(listing.reservedFor == buyer, "Token reserved");
         }
 
         if (listing.amount - amount > 0) {
@@ -256,6 +256,10 @@ contract Listings is IListings {
         onlyOwner
         returns (bool)
     {
+        require(
+            block.timestamp >= listingToRemove.reservedUntil,
+            "Token reserved"
+        );
         uint256 listPtrToRemove = listingToRemove.listPtr;
         // pop from _listings,
         Listing memory lastListing = _listings[_listings.length - 1];
@@ -421,7 +425,7 @@ contract Listings is IListings {
         address tokenAddr,
         uint256 tokenId
     ) external view override returns (uint256 listPtr) {
-        require(isListed(msg.sender, tokenAddr, tokenId), "Token not listed");
+        require(isListed(seller, tokenAddr, tokenId), "Token not listed");
         return _token2Ptr[seller][tokenAddr][tokenId];
     }
 
@@ -440,6 +444,7 @@ contract Listings is IListings {
         override
         returns (Listing memory listing)
     {
+        require(listPtr < _listings.length, "Invalid listing pointer");
         return _listings[listPtr];
     }
 
@@ -498,8 +503,9 @@ contract Listings is IListings {
         override
         returns (address reservedFor, uint256 reservedUntil)
     {
-        reservedFor = address(0);
-        reservedUntil = 0;
+        Listing memory listing = getListing(seller, tokenAddr, tokenId);
+
+        return (listing.reservedFor, listing.reservedUntil);
     }
 
     function getType(address tokenAddr) public returns (NFT_TYPE tokenType) {

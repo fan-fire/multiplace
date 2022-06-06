@@ -99,7 +99,7 @@ interface IMultiplace is IERC165 {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external returns (address reservedFor, uint256 reservedUntil);
+    ) external view returns (address reservedFor, uint256 reservedUntil);
 
     function unlist(address tokenAddr, uint256 tokenId) external;
 

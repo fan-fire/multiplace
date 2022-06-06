@@ -195,7 +195,12 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external override returns (address reservedFor, uint256 reservedUntil) {
+    )
+        external
+        view
+        override
+        returns (address reservedFor, uint256 reservedUntil)
+    {
         return (listings.getReservedState(seller, tokenAddr, tokenId));
     }
 
@@ -217,7 +222,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
             admin.isPaymentToken(paymentToken),
             "Payment token not supported"
         );
-        require(amount > 0, "Amount must be greater than 0");
+        require(amount > 0, "Invalid amount");
         require(
             _balances[paymentToken][msg.sender] >= amount,
             "Insufficient funds"
