@@ -79,6 +79,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
 
         uint256 balance = IERC20(paymentToken).balanceOf(msg.sender);
 
+        require(amount <= listing.amount, "Not enough amount in listing");
         require(balance >= totalPrice, "Insufficient funds");
         // check if marketplace is allowed to transfer payment token
         require(

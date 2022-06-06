@@ -27,8 +27,8 @@ const RESERVER_ROLE = ethers.utils.solidityKeccak256(
   ["string"],
   ["RESERVER_ROLE"]
 );
-const PROTOCOL_FEE_DEN = ethers.BigNumber.from("10000000000000");
-const PROTOCOL_FEE_NUM = ethers.BigNumber.from("250000000000");
+const PROTOCOL_FEE_DEN = ethers.BigNumber.from("100000000000000");
+const PROTOCOL_FEE_NUM = ethers.BigNumber.from("2500000000000");
 
 const NFT_TYPE = {
   ERC721: 0,
