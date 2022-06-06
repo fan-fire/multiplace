@@ -195,7 +195,12 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         address seller,
         address tokenAddr,
         uint256 tokenId
-    ) external override returns (address reservedFor, uint256 reservedUntil) {
+    )
+        external
+        view
+        override
+        returns (address reservedFor, uint256 reservedUntil)
+    {
         return (listings.getReservedState(seller, tokenAddr, tokenId));
     }
 
@@ -204,6 +209,10 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         override
         whenNotPaused
     {
+        require(
+            listings.isListed(msg.sender, tokenAddr, tokenId),
+            "Token not listed for msg.sender"
+        );
         listings.unlist(msg.sender, tokenAddr, tokenId);
     }
 
@@ -213,7 +222,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
             admin.isPaymentToken(paymentToken),
             "Payment token not supported"
         );
-        require(amount > 0, "Amount must be greater than 0");
+        require(amount > 0, "Invalid amount");
         require(
             _balances[paymentToken][msg.sender] >= amount,
             "Insufficient funds"
@@ -311,6 +320,10 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         address tokenAddr,
         uint256 tokenId
     ) public view override returns (IListings.Listing memory listing) {
+        require(
+            listings.isListed(seller, tokenAddr, tokenId),
+            "Token not listed"
+        );
         return listings.getListing(seller, tokenAddr, tokenId);
     }
 
@@ -366,9 +379,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         returns (IListings.Listing[] memory _listings)
     {
         address[] memory sellers = getSellers(tokenAddr, tokenId);
-        IListings.Listing[] memory _listings = new IListings.Listing[](
-            sellers.length
-        );
+        _listings = new IListings.Listing[](sellers.length);
 
         for (uint256 i = 0; i < sellers.length; i++) {
             _listings[i] = listings.getListing(sellers[i], tokenAddr, tokenId);

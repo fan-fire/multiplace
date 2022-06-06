@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.5;
 import "./IAdmin.sol";
 
@@ -75,7 +76,7 @@ contract Admin is IAdmin {
 
     function supportsInterface(bytes4 interfaceId)
         public
-        view
+        pure
         override
         returns (bool)
     {
