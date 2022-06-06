@@ -565,13 +565,270 @@ describe("Royalties", async () => {
 
     expect(unitRoyaltyAmount.toString()).to.be.equal(
       newRoyaltyAmount.toString(),
-      "unitRoyaltyAmount should not have changed yet as updateRoyalties hasn't been called"
+      "unitRoyaltyAmount should have changed as updateRoyalties has been called"
     );
     expect(receiver).to.be.equal(newRecipient);
   });
-  xit("Royalties in marketplace should update if 2891 royalties are updated and updateRoyalties is called on the multiplace for 1155", async () => {});
-  xit("can update royalties if you are the owner for 721 when not 2981", async () => {});
-  xit("can update royalties if you are the owner for 1155 when not 2981", async () => {});
-  xit("can not update if no owner and not 2981 for 721", async () => {});
-  xit("can not update if no owner and not 2981 for 1155", async () => {});
+  it("Royalties in marketplace should update if 2891 royalties are updated and updateRoyalties is called on the multiplace for 1155", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc1155With2981Mock.address;
+    let tokenId = 2;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let royalties2981 = await erc1155With2981Mock.royaltyInfo(
+      tokenId,
+      listing.unitPrice
+    );
+
+    let receiver2981 = royalties2981.receiver;
+    let royaltyAmount2981 = royalties2981.royaltyAmount;
+
+    var { receiver, unitRoyaltyAmount } = await multiplace.getUnitRoyalties(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+
+    expect(unitRoyaltyAmount.toString()).to.be.equal(
+      royaltyAmount2981.toString()
+    );
+    expect(receiver).to.be.equal(receiver2981);
+
+    let newRecipient = acc1.address;
+    let newPercentage = 15;
+    await erc1155With2981Mock.setRoyalties(newRecipient, newPercentage);
+
+    listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    expect(unitRoyaltyAmount.toString()).to.be.equal(
+      royaltyAmount2981.toString(),
+      "unitRoyaltyAmount should not have changed yet as updateRoyalties hasn't been called"
+    );
+    expect(receiver).to.be.equal(receiver2981);
+
+    royalties2981 = await erc1155With2981Mock.royaltyInfo(
+      tokenId,
+      listing.unitPrice
+    );
+
+    receiver2981 = royalties2981.receiver;
+    royaltyAmount2981 = royalties2981.royaltyAmount;
+
+    let newRoyaltyAmount = listing.unitPrice.mul(newPercentage).div(100);
+
+    expect(royaltyAmount2981.toString()).to.be.equal(
+      newRoyaltyAmount.toString(),
+      "royaltyAmount should have been updated"
+    );
+    expect(receiver2981).to.be.equal(newRecipient);
+
+    await multiplace.updateRoyalties(sellerAddr, tokenAddr, tokenId, 0);
+
+    var { receiver, unitRoyaltyAmount } = await multiplace.getUnitRoyalties(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+
+    expect(unitRoyaltyAmount.toString()).to.be.equal(
+      newRoyaltyAmount.toString(),
+      "unitRoyaltyAmount should have changed as updateRoyalties has been called"
+    );
+    expect(receiver).to.be.equal(newRecipient);
+  });
+  it("can update royalty amount if you are the owner for 721 when not 2981", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 2;
+
+    var { receiver, unitRoyaltyAmount } = await multiplace.getUnitRoyalties(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+
+    expect(unitRoyaltyAmount.toString()).to.be.equal(
+      "0",
+      "unitRoyaltyAmount should be 0"
+    );
+    expect(receiver).to.be.equal(owner.address, "receiver should be owner");
+
+    let newPercentage = 15;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let newAmount = listing.unitPrice.mul(newPercentage).div(100);
+
+    await multiplace
+      .connect(owner)
+      .updateRoyalties(sellerAddr, tokenAddr, tokenId, newAmount);
+
+    var { receiver, unitRoyaltyAmount } = await multiplace.getUnitRoyalties(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+
+    expect(unitRoyaltyAmount.toString()).to.be.equal(
+      newAmount.toString(),
+      "unitRoyaltyAmount should be newAmount"
+    );
+    expect(receiver).to.be.equal(owner.address, "receiver should be owner");
+  });
+
+  it("can update royalties if you are the owner for 1155 when not 2981", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc1155Mock.address;
+    let tokenId = 2;
+
+    var { receiver, unitRoyaltyAmount } = await multiplace.getUnitRoyalties(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+
+    expect(unitRoyaltyAmount.toString()).to.be.equal(
+      "0",
+      "unitRoyaltyAmount should be 0"
+    );
+    expect(receiver).to.be.equal(owner.address, "receiver should be owner");
+
+    let newPercentage = 15;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let newAmount = listing.unitPrice.mul(newPercentage).div(100);
+
+    await multiplace
+      .connect(owner)
+      .updateRoyalties(sellerAddr, tokenAddr, tokenId, newAmount);
+
+    var { receiver, unitRoyaltyAmount } = await multiplace.getUnitRoyalties(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+
+    expect(unitRoyaltyAmount.toString()).to.be.equal(
+      newAmount.toString(),
+      "unitRoyaltyAmount should be newAmount"
+    );
+    expect(receiver).to.be.equal(owner.address, "receiver should be owner");
+  });
+  it("can't update royalties if you are not the owner for 721 when not 2981", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 2;
+
+    var { receiver, unitRoyaltyAmount } = await multiplace.getUnitRoyalties(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+
+    expect(unitRoyaltyAmount.toString()).to.be.equal(
+      "0",
+      "unitRoyaltyAmount should be 0"
+    );
+    expect(receiver).to.be.equal(owner.address, "receiver should be owner");
+
+    let newPercentage = 15;
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+    let newAmount = listing.unitPrice.mul(newPercentage).div(100);
+
+    await expect(
+      multiplace
+        .connect(acc1)
+        .updateRoyalties(sellerAddr, tokenAddr, tokenId, newAmount)
+    ).to.be.revertedWith("Only royalty receiver can update");
+  });
+  it("can't update royalties if you are not the owner for 1155 when not 2981", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc1155Mock.address;
+    let tokenId = 2;
+
+    var { receiver, unitRoyaltyAmount } = await multiplace.getUnitRoyalties(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+
+    expect(unitRoyaltyAmount.toString()).to.be.equal(
+      "0",
+      "unitRoyaltyAmount should be 0"
+    );
+    expect(receiver).to.be.equal(owner.address, "receiver should be owner");
+
+    let newPercentage = 15;
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+    let newAmount = listing.unitPrice.mul(newPercentage).div(100);
+
+    await expect(
+      multiplace
+        .connect(acc1)
+        .updateRoyalties(sellerAddr, tokenAddr, tokenId, newAmount)
+    ).to.be.revertedWith("Only royalty receiver can update");
+  });
+
+  it("can not update if no owner and not 2981 for 721", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721WithoutOwnerMock.address;
+    let tokenId = 2;
+
+    var { receiver, unitRoyaltyAmount } = await multiplace.getUnitRoyalties(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+
+    expect(unitRoyaltyAmount.toString()).to.be.equal(
+      "0",
+      "unitRoyaltyAmount should be 0"
+    );
+    expect(receiver).to.be.equal(
+      constants.ZERO_ADDRESS,
+      "receiver should be owner"
+    );
+
+    let newPercentage = 15;
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+    let newAmount = listing.unitPrice.mul(newPercentage).div(100);
+
+    await expect(
+      multiplace
+        .connect(acc1)
+        .updateRoyalties(sellerAddr, tokenAddr, tokenId, newAmount)
+    ).to.be.revertedWith("Token has no owner");
+  });
+  it("can not update if no owner and not 2981 for 1155", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc1155WithoutOwnerMock.address;
+    let tokenId = 2;
+
+    var { receiver, unitRoyaltyAmount } = await multiplace.getUnitRoyalties(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+
+    expect(unitRoyaltyAmount.toString()).to.be.equal(
+      "0",
+      "unitRoyaltyAmount should be 0"
+    );
+    expect(receiver).to.be.equal(
+      constants.ZERO_ADDRESS,
+      "receiver should be owner"
+    );
+
+    let newPercentage = 15;
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+    let newAmount = listing.unitPrice.mul(newPercentage).div(100);
+
+    await expect(
+      multiplace
+        .connect(acc1)
+        .updateRoyalties(sellerAddr, tokenAddr, tokenId, newAmount)
+    ).to.be.revertedWith("Token has no owner");
+  });
 });

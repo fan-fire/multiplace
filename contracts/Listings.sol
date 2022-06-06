@@ -301,7 +301,10 @@ contract Listings is IListings {
         require(_isListed[seller][tokenAddr][tokenId], "NFT not listed");
         Royalty memory royalty = getUnitRoyalties(seller, tokenAddr, tokenId);
         require(royalty.receiver != address(0), "Token has no owner");
-        require(royalty.receiver == updater, "Only royalty receiver");
+        require(
+            royalty.receiver == updater,
+            "Only royalty receiver can update"
+        );
         require(
             royalty.unitRoyaltyAmount != newRoyaltyAmount,
             "Invalid amount"
