@@ -291,6 +291,45 @@ contract Listings is IListings {
         return true;
     }
 
+    function updateRoyalties(
+        address updater,
+        address seller,
+        address tokenAddr,
+        uint256 tokenId,
+        uint256 newRoyaltyAmount
+    ) public override onlyOwner {
+        require(_isListed[seller][tokenAddr][tokenId], "NFT not listed");
+        Royalty memory royalty = getUnitRoyalties(seller, tokenAddr, tokenId);
+        require(royalty.receiver != address(0), "Token has no owner");
+        require(
+            royalty.receiver == updater,
+            "Only royalty receiver can update"
+        );
+        require(
+            royalty.unitRoyaltyAmount != newRoyaltyAmount,
+            "Invalid amount"
+        );
+
+        Listing memory listing = getListing(seller, tokenAddr, tokenId);
+
+        if (
+            listing.nftType == NFT_TYPE.ERC721_2981 ||
+            listing.nftType == NFT_TYPE.ERC1155_2981
+        ) {
+            address receiver;
+            uint256 royaltyAmount;
+            (receiver, royaltyAmount) = IERC2981(tokenAddr).royaltyInfo(
+                tokenId,
+                listing.unitPrice
+            );
+            royalty.receiver = receiver;
+            royalty.unitRoyaltyAmount = royaltyAmount;
+        } else {
+            royalty.unitRoyaltyAmount = newRoyaltyAmount;
+        }
+        _unitRoyalties[seller][tokenAddr][tokenId] = royalty;
+    }
+
     function status(
         address seller,
         address tokenAddr,
@@ -343,7 +382,29 @@ contract Listings is IListings {
         address tokenAddr,
         uint256 tokenId
     ) external override {
-        uint256 a = 4;
+        // check that the NFT is listed
+        require(_isListed[seller][tokenAddr][tokenId], "NFT not listed");
+
+        // check if listing is still valid
+        bool isSellerOwner;
+        bool isTokenStillApproved;
+        Listing memory listing;
+        (isSellerOwner, isTokenStillApproved, listing) = status(
+            seller,
+            tokenAddr,
+            tokenId
+        );
+
+        // if listing is still valid, do nothing
+
+        if (isSellerOwner && isTokenStillApproved) {
+            return;
+        }
+
+        // unlist
+        // emit UnlistStale(tokenAddr, tokenId);
+
+        require(_unlist(listing), "NFT could not be unlisted");
     }
 
     function getSellers(address tokenAddr, uint256 tokenId)
@@ -424,7 +485,7 @@ contract Listings is IListings {
         listing.reservedUntil = block.timestamp + period;
 
         _listings[listing.listPtr] = listing;
-        // emit Reserved(nftAddress, tokenId, reservee, period, block.timestamp + period);
+        // emit Reserved(tokenAddr, tokenId, reservee, period, block.timestamp + period);
     }
 
     function getReservedState(

@@ -77,11 +77,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         uint256 totalPrice = listing.unitPrice * amount;
         address paymentToken = listing.paymentToken;
 
-        // console.log("totalPrice %s", totalPrice);
-        // console.log("paymentToken %s", paymentToken);
-
         uint256 balance = IERC20(paymentToken).balanceOf(msg.sender);
-        // console.log("balance %s", balance);
 
         require(balance >= totalPrice, "Insufficient funds");
         // check if marketplace is allowed to transfer payment token
@@ -176,23 +172,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         );
     }
 
-    function status(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId
-    )
-        public
-        view
-        override
-        returns (
-            bool isSellerOwner,
-            bool isTokenStillApproved,
-            IListings.Listing memory listing
-        )
-    {
-        return (listings.status(seller, tokenAddr, tokenId));
-    }
-
     function unlistStale(
         address seller,
         address tokenAddr,
@@ -227,15 +206,84 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         listings.unlist(msg.sender, tokenAddr, tokenId);
     }
 
+    function pullFunds(address paymentToken, uint256 amount) external override {
+        // Checks
+        require(
+            admin.isPaymentToken(paymentToken),
+            "Payment token not supported"
+        );
+        require(amount > 0, "Amount must be greater than 0");
+        require(
+            _balances[paymentToken][msg.sender] >= amount,
+            "Insufficient funds"
+        );
+        // Effects
+        uint256 curBalance = _balances[paymentToken][msg.sender];
+        _balances[paymentToken][msg.sender] = curBalance - amount;
+
+        // Integrations
+        IERC20(paymentToken).transfer(msg.sender, amount);
+
+        assert(_balances[paymentToken][msg.sender] == curBalance - amount);
+        emit FundsWithdrawn(msg.sender, paymentToken, amount);
+    }
+
+    function pause() public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _pause();
+    }
+
+    function unpause() public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _unpause();
+    }
+
+    function addPaymentToken(address paymentToken)
+        public
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        require(
+            !admin.isPaymentToken(paymentToken),
+            "Payment token already added"
+        );
+        admin.addPaymentToken(paymentToken);
+    }
+
+    function updateRoyalties(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId,
+        uint256 newRoyaltyAmount
+    ) public override {
+        listings.updateRoyalties(
+            msg.sender,
+            seller,
+            tokenAddr,
+            tokenId,
+            newRoyaltyAmount
+        );
+    }
+
+    function changeProtocolWallet(address newProtocolWallet)
+        public
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        admin.changeProtocolWallet(newProtocolWallet);
+    }
+
+    function changeProtocolFee(uint256 feeNumerator, uint256 feeDenominator)
+        public
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        admin.changeProtocolFee(feeNumerator, feeDenominator);
+    }
+
     function getListingPointer(
         address seller,
         address tokenAddr,
         uint256 tokenId
     ) external view override returns (uint256 listPtr) {
-        require(
-            listings.isListed(msg.sender, tokenAddr, tokenId),
-            "Token not listed"
-        );
         return listings.getListingPointer(seller, tokenAddr, tokenId);
     }
 
@@ -271,7 +319,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         override
         returns (IListings.Listing[] memory)
     {
-        // return new IListings.Listing[](0);
         return listings.getAllListings();
     }
 
@@ -283,56 +330,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
     {
         require(admin.isPaymentToken(paymentToken), "Unkown payment token");
         return _balances[paymentToken][account];
-    }
-
-    function pullFunds(address paymentToken, uint256 amount) external override {
-        // Checks
-        require(
-            admin.isPaymentToken(paymentToken),
-            "Payment token not supported"
-        );
-        require(amount > 0, "Amount must be greater than 0");
-        require(
-            _balances[paymentToken][msg.sender] >= amount,
-            "Insufficient funds"
-        );
-        // Effects
-        uint256 curBalance = _balances[paymentToken][msg.sender];
-        _balances[paymentToken][msg.sender] = curBalance - amount;
-
-        // Integrations
-        IERC20(paymentToken).transfer(msg.sender, amount);
-
-        assert(_balances[paymentToken][msg.sender] == curBalance - amount);
-        emit FundsWithdrawn(msg.sender, paymentToken, amount);
-    }
-
-    /**
-     * @dev Method to pause the marketplace.
-     *
-     */
-    function pause() public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _pause();
-    }
-
-    /**
-     * @dev Method to unpause the marketplace.
-     *
-     */
-    function unpause() public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _unpause();
-    }
-
-    function addPaymentToken(address paymentToken)
-        public
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        require(
-            !admin.isPaymentToken(paymentToken),
-            "Payment token already added"
-        );
-        admin.addPaymentToken(paymentToken);
     }
 
     function isPaymentToken(address paymentToken)
@@ -377,6 +374,23 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         }
     }
 
+    function status(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    )
+        public
+        view
+        override
+        returns (
+            bool isSellerOwner,
+            bool isTokenStillApproved,
+            IListings.Listing memory listing
+        )
+    {
+        return (listings.status(seller, tokenAddr, tokenId));
+    }
+
     function supportsInterface(bytes4 interfaceId)
         public
         view
@@ -388,22 +402,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
             interfaceId == type(IAccessControl).interfaceId ||
             interfaceId == type(IERC165).interfaceId ||
             super.supportsInterface(interfaceId);
-    }
-
-    function changeProtocolWallet(address newProtocolWallet)
-        public
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        admin.changeProtocolWallet(newProtocolWallet);
-    }
-
-    function changeProtocolFee(uint256 feeNumerator, uint256 feeDenominator)
-        public
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        admin.changeProtocolFee(feeNumerator, feeDenominator);
     }
 
     function protocolFeeNumerator() public view override returns (uint256) {

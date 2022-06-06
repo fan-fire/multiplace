@@ -120,4 +120,12 @@ interface IListings is IERC165 {
         external
         view
         returns (address[] memory sellers);
+
+    function updateRoyalties(
+        address updater,
+        address seller,
+        address tokenAddr,
+        uint256 tokenId,
+        uint256 newRoyaltyAmount
+    ) external;
 }

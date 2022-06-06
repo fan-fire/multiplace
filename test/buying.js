@@ -24,8 +24,6 @@ describe("Buying", async () => {
   let buyer2;
   let seller;
   let acc1;
-  let acc2;
-  let acc3;
 
   let multiplace;
   let multiplaceProxy;
