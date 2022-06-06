@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.5;
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
@@ -50,6 +51,11 @@ interface IListings is IERC165 {
         uint256 tokenId,
         uint256 amount
     ) external returns (bool);
+
+    function getType(address tokenAddr)
+        external
+        view
+        returns (NFT_TYPE tokenType);
 
     function status(
         address seller,

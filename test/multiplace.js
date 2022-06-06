@@ -980,6 +980,40 @@ describe("Multiplace", async () => {
       expectedReservedUntil.toString()
     );
   });
-  xit("Listing is unlisted if 1 amount of 1155 is bought, then another 1 depleting listing amount", async () => {});
+  it("Listing is unlisted if 1 amount of 1155 is bought, then another 1 depleting listing amount", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc1155With2981Mock.address;
+    let tokenId = 2;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let amount = listing.amount.sub(1);
+    let unitPrice = listing.unitPrice;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+
+    await erc20Mock
+      .connect(buyer1)
+      .approve(multiplace.address, totalPrice.mul(2));
+
+    await multiplace
+      .connect(buyer1)
+      .buy(sellerAddr, tokenAddr, tokenId, amount);
+
+    let isListed = await multiplace.isListed(sellerAddr, tokenAddr, tokenId);
+    expect(isListed).to.be.equal(true);
+
+    let listingAfter = await multiplace.getListing(
+      sellerAddr,
+      tokenAddr,
+      tokenId
+    );
+    expect(listingAfter.amount.toString()).to.be.equal("1");
+
+    await multiplace
+      .connect(buyer1)
+      .buy(sellerAddr, tokenAddr, tokenId, amount);
+    isListed = await multiplace.isListed(sellerAddr, tokenAddr, tokenId);
+    expect(isListed).to.be.equal(false);
+  });
   xit("front runner can't withdraw funds", async () => {});
 });

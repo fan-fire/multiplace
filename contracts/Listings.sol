@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.5;
 
 import "@openzeppelin/contracts/interfaces/IERC721.sol";
@@ -508,7 +509,12 @@ contract Listings is IListings {
         return (listing.reservedFor, listing.reservedUntil);
     }
 
-    function getType(address tokenAddr) public returns (NFT_TYPE tokenType) {
+    function getType(address tokenAddr)
+        public
+        view
+        override
+        returns (NFT_TYPE tokenType)
+    {
         require(tokenAddr.supportsERC165(), "NFT not ERC165");
 
         bool isERC721 = tokenAddr.supportsInterface(type(IERC721).interfaceId);
@@ -535,7 +541,7 @@ contract Listings is IListings {
 
     function supportsInterface(bytes4 interfaceId)
         public
-        view
+        pure
         override
         returns (bool)
     {

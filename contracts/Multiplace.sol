@@ -379,9 +379,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         returns (IListings.Listing[] memory _listings)
     {
         address[] memory sellers = getSellers(tokenAddr, tokenId);
-        IListings.Listing[] memory _listings = new IListings.Listing[](
-            sellers.length
-        );
+        _listings = new IListings.Listing[](sellers.length);
 
         for (uint256 i = 0; i < sellers.length; i++) {
             _listings[i] = listings.getListing(sellers[i], tokenAddr, tokenId);
