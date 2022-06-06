@@ -257,10 +257,6 @@ contract Listings is IListings {
         onlyOwner
         returns (bool)
     {
-        require(
-            block.timestamp >= listingToRemove.reservedUntil,
-            "Token reserved"
-        );
         uint256 listPtrToRemove = listingToRemove.listPtr;
         // pop from _listings,
         Listing memory lastListing = _listings[_listings.length - 1];
@@ -399,6 +395,8 @@ contract Listings is IListings {
             tokenAddr,
             tokenId
         );
+
+        require(block.timestamp > listing.reservedUntil, "Token reserved");
 
         // if listing is still valid, do nothing
 
