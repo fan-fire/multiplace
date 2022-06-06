@@ -454,7 +454,7 @@ describe("Multiplace", async () => {
       multiplace.connect(owner).addPaymentToken(constants.ZERO_ADDRESS)
     ).to.be.revertedWith("0x00 not allowed");
   });
-  it.only("only the seller can unlist 721", async () => {
+  it("only the seller can unlist 721", async () => {
     let sellerAddr = seller.address;
     let tokenAddr = erc721Mock.address;
     let tokenId = 2;
@@ -492,4 +492,6 @@ describe("Multiplace", async () => {
   xit("can unlist if token is not reserved", async () => {});
   xit("can unlist if reserved time has passed", async () => {});
   xit("getReservedState resturns correct state", async () => {});
+  xit("Listing is unlisted if 1 amount of 1155 is bought, then another 1 depleting listing amount", async () => {});
+
 });
