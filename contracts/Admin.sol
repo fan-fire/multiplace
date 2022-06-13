@@ -31,7 +31,6 @@ contract Admin is IAdmin {
     {
         require(newProtocolWallet != address(0), "0x00 not allowed");
         _protocolWallet = newProtocolWallet;
-        emit ProtocolWalletChanged(newProtocolWallet);
     }
 
     function changeProtocolFee(uint256 feeNumerator, uint256 feeDenominator)
@@ -42,7 +41,6 @@ contract Admin is IAdmin {
         require(feeDenominator != 0, "denominator cannot be 0");
         _protocolFeeNumerator = feeNumerator;
         _protocolFeeDenominator = feeDenominator;
-        emit ProtocolFeeChanged(feeNumerator, feeDenominator);
     }
 
     function addPaymentToken(address paymentToken) external override onlyOwner {
@@ -50,7 +48,6 @@ contract Admin is IAdmin {
         require(!isPaymentToken(paymentToken), "Payment token already added");
         require(paymentToken != address(0), "0x00 not allowed");
         _isPaymentToken[paymentToken] = true;
-        emit PaymentTokenAdded(paymentToken);
     }
 
     function isPaymentToken(address paymentToken)

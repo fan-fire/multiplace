@@ -28,10 +28,21 @@ module.exports = {
     optimizer: { enabled: true, runs: 200 },
   },
   networks: {
-    ropsten: {
-      url: process.env.ROPSTEN_URL || "",
-      accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    polygon: {
+      accounts: {
+        mnemonic: process.env.MNEMONIC,
+      },
+      url: process.env.POLYGON_NODE,
+      chainId: 137,
+      gasPrice: 45 * 10 ** 9,
+    },
+    mumbai: {
+      accounts: {
+        mnemonic: process.env.MNEMONIC,
+      },
+      url: process.env.MUMBAI_NODE,
+      chainId: 80001,
+      gasPrice: 45 * 10 ** 9,
     },
   },
   contractSizer: {

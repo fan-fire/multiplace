@@ -172,19 +172,6 @@ contract Listings is IListings {
 
         // add to _listings
         _listings.push(listing);
-
-        emit Listed(
-            listPtr,
-            tokenAddr,
-            tokenId,
-            lister,
-            unitPrice,
-            amount,
-            paymentToken,
-            _nftType,
-            royalty.receiver,
-            royalty.unitRoyaltyAmount
-        );
     }
 
     function unlist(
@@ -231,20 +218,6 @@ contract Listings is IListings {
         if (listing.amount - amount > 0) {
             listing.amount = listing.amount - amount;
             _listings[listing.listPtr] = listing;
-
-            // emit Bought(
-            //     listing.listPtr,
-            //     listing.tokenAddr,
-            //     listing.tokenId,
-            //     listing.seller,
-            //     buyer,
-            //     listing.unitPrice,
-            //     listing.amount,
-            //     listing.paymentToken,
-            //     listing.nftType,
-            //     listing.royaltyReceiver,
-            //     listing.unitRoyaltyAmount
-            // );
         } else {
             assert(_unlist(listing));
         }
@@ -288,7 +261,6 @@ contract Listings is IListings {
             listingToRemove.tokenId
         ] = false;
         assert(numListings >= 0);
-        emit Unlisted(lastListing.tokenAddr, lastListing.tokenId);
         return true;
     }
 
@@ -405,8 +377,6 @@ contract Listings is IListings {
         }
 
         // unlist
-        // emit UnlistStale(tokenAddr, tokenId);
-
         require(_unlist(listing), "NFT could not be unlisted");
     }
 
@@ -489,7 +459,6 @@ contract Listings is IListings {
         listing.reservedUntil = block.timestamp + period;
 
         _listings[listing.listPtr] = listing;
-        // emit Reserved(tokenAddr, tokenId, reservee, period, block.timestamp + period);
     }
 
     function getReservedState(

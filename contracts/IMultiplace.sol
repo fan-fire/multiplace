@@ -30,22 +30,43 @@ interface IMultiplace is IERC165 {
         uint256 unitRoyaltyAmount
     );
 
+    event Unlisted(
+        address indexed seller,
+        address indexed tokenAddr,
+        uint256 indexed tokenId
+    );
+
+    event UnlistStale(
+        address indexed seller,
+        address indexed tokenAddr,
+        uint256 indexed tokenId
+    );
+
+    event Reserved(
+        address indexed seller,
+        address indexed tokenAddr,
+        uint256 indexed tokenId,
+        address reservedFor,
+        uint256 period
+    );
+
+    event RoyaltiesSet(
+        address indexed seller,
+        address indexed tokenAddr,
+        uint256 indexed tokenId,
+        uint256 royaltyAmount
+    );
+
+    event PaymentTokenAdded(address indexed paymentToken);
+
     event FundsWithdrawn(
         address indexed to,
         address indexed paymentToken,
         uint256 amount
     );
-    event Unlisted(address indexed tokenAddr, uint256 indexed tokenId);
 
-    event Reserved(
-        address indexed tokenAddr,
-        uint256 indexed tokenId,
-        address indexed reservedFor,
-        uint256 period,
-        uint256 reservedUntil
-    );
-
-    event UnlistStale(address indexed tokenAddr, uint256 indexed tokenId);
+    event ProtocolWalletChanged(address newProtocolWallet);
+    event ProtocolFeeChanged(uint256 feeNumerator, uint256 feeDenominator);
 
     function list(
         address tokenAddr,
@@ -62,18 +83,7 @@ interface IMultiplace is IERC165 {
         uint256 amount
     ) external;
 
-    function status(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId
-    )
-        external
-        view
-        returns (
-            bool isSellerOwner,
-            bool isTokenStillApproved,
-            IListings.Listing memory listing
-        );
+    function unlist(address tokenAddr, uint256 tokenId) external;
 
     function unlistStale(
         address seller,
@@ -96,13 +106,33 @@ interface IMultiplace is IERC165 {
         uint256 newRoyaltyAmount
     ) external;
 
+    function addPaymentToken(address paymentToken) external;
+
+    function pullFunds(address paymentToken, uint256 amount) external;
+
+    function changeProtocolWallet(address newProtocolWallet) external;
+
+    function changeProtocolFee(uint256 feeNumerator, uint256 feeDenominator)
+        external;
+
+    function status(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    )
+        external
+        view
+        returns (
+            bool isSellerOwner,
+            bool isTokenStillApproved,
+            IListings.Listing memory listing
+        );
+
     function getReservedState(
         address seller,
         address tokenAddr,
         uint256 tokenId
     ) external view returns (address reservedFor, uint256 reservedUntil);
-
-    function unlist(address tokenAddr, uint256 tokenId) external;
 
     function getListingPointer(
         address seller,
@@ -136,10 +166,6 @@ interface IMultiplace is IERC165 {
         view
         returns (IListings.Listing[] memory listings);
 
-    function pullFunds(address paymentToken, uint256 amount) external;
-
-    function addPaymentToken(address paymentToken) external;
-
     function isPaymentToken(address paymentToken) external view returns (bool);
 
     function getUnitRoyalties(
@@ -157,11 +183,6 @@ interface IMultiplace is IERC165 {
         external
         view
         returns (IListings.Listing[] memory listings);
-
-    function changeProtocolWallet(address newProtocolWallet) external;
-
-    function changeProtocolFee(uint256 feeNumerator, uint256 feeDenominator)
-        external;
 
     function protocolFeeNumerator() external view returns (uint256);
 
