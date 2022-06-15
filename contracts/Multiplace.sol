@@ -66,7 +66,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         address tokenAddr,
         uint256 tokenId,
         uint256 amount
-    ) external override {
+    ) external override whenNotPaused {
         IListings.Listing memory listing = listings.getListing(
             seller,
             tokenAddr,
@@ -237,7 +237,11 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         emit PaymentTokenAdded(paymentToken);
     }
 
-    function pullFunds(address paymentToken, uint256 amount) external override {
+    function pullFunds(address paymentToken, uint256 amount)
+        external
+        override
+        whenNotPaused
+    {
         // Checks
         require(
             admin.isPaymentToken(paymentToken),
@@ -403,25 +407,30 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         }
     }
 
-    function getTokenAddressListings(address tokenAddr)
+    function getAddressListings(address[] memory tokenAddrs)
         public
         view
+        override
         returns (IListings.Listing[] memory _listings)
     {
         IListings.Listing[] memory allListings = listings.getAllListings();
         uint256 total = 0;
         for (uint256 i = 0; i < allListings.length; i++) {
-            if (allListings[i].tokenAddr == tokenAddr) {
-                total = total + 1;
+            for (uint256 j = 0; j < tokenAddrs.length; j++) {
+                if (allListings[i].tokenAddr == tokenAddrs[j]) {
+                    total++;
+                }
             }
         }
 
         _listings = new IListings.Listing[](total);
-        uint256 j = 0;
+        uint256 k = 0;
         for (uint256 i = 0; i < allListings.length; i++) {
-            if (allListings[i].tokenAddr == tokenAddr) {
-                _listings[j] = allListings[i];
-                j = j + 1;
+            for (uint256 j = 0; j < tokenAddrs.length; j++) {
+                if (allListings[i].tokenAddr == tokenAddrs[j]) {
+                    _listings[k] = allListings[i];
+                    k = k + 1;
+                }
             }
         }
 
@@ -454,8 +463,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         return
             interfaceId == type(IMultiplace).interfaceId ||
             interfaceId == type(IAccessControl).interfaceId ||
-            interfaceId == type(IERC165).interfaceId ||
-            super.supportsInterface(interfaceId);
+            interfaceId == type(IERC165).interfaceId;
     }
 
     function protocolFeeNumerator() public view override returns (uint256) {

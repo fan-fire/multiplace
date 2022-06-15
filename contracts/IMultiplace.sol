@@ -184,6 +184,11 @@ interface IMultiplace is IERC165 {
         view
         returns (IListings.Listing[] memory listings);
 
+    function getAddressListings(address[] memory tokenAddrs)
+        external
+        view
+        returns (IListings.Listing[] memory _listings);
+
     function protocolFeeNumerator() external view returns (uint256);
 
     function protocolFeeDenominator() external view returns (uint256);

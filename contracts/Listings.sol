@@ -25,34 +25,6 @@ contract Listings is IListings {
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         internal _sellersPtr; //Mapping from tokenAddr.tokenId.lister -> listersPtr to be able to pop a lister given the address
 
-    event Listed(
-        uint256 listPtr,
-        address indexed tokenAddr,
-        uint256 indexed tokenId,
-        address indexed seller,
-        uint256 unitPrice,
-        uint256 amount,
-        address paymentToken,
-        IListings.NFT_TYPE nftType,
-        address royaltyReceiver,
-        uint256 unitRoyaltyAmount
-    );
-    event Bought(
-        uint256 listPtr,
-        address indexed tokenAddr,
-        uint256 indexed tokenId,
-        address indexed seller,
-        address buyer,
-        uint256 unitPrice,
-        uint256 amount,
-        address paymentToken,
-        IListings.NFT_TYPE nftType,
-        address royaltyReceiver,
-        uint256 unitRoyaltyAmount
-    );
-
-    event Unlisted(address indexed tokenAddr, uint256 indexed tokenId);
-
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this function");
         _;

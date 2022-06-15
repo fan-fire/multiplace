@@ -413,7 +413,7 @@ describe("Events", async () => {
     expect(actualEventArgs).to.deep.equal(expectedEventArgs);
   });
 
-  xit("should emit a Bought event for ERC721", async () => {});
+  it("should emit a Bought event for ERC721", async () => {});
   xit("should emit a Bought event for ERC1155", async () => {});
   xit("should emit a Bought event for partial ERC1155", async () => {});
   xit("should emit a Bought event for remainder of partial and Unlist event when fully depleted ERC1155", async () => {});
