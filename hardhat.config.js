@@ -34,7 +34,7 @@ module.exports = {
       },
       url: process.env.POLYGON_NODE,
       chainId: 137,
-      gasPrice: 45 * 10 ** 9,
+      gasPrice: 300 * 10 ** 9,
     },
     mumbai: {
       accounts: {

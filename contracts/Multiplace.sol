@@ -403,6 +403,31 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         }
     }
 
+    function getTokenAddressListings(address tokenAddr)
+        public
+        view
+        returns (IListings.Listing[] memory _listings)
+    {
+        IListings.Listing[] memory allListings = listings.getAllListings();
+        uint256 total = 0;
+        for (uint256 i = 0; i < allListings.length; i++) {
+            if (allListings[i].tokenAddr == tokenAddr) {
+                total = total + 1;
+            }
+        }
+
+        _listings = new IListings.Listing[](total);
+        uint256 j = 0;
+        for (uint256 i = 0; i < allListings.length; i++) {
+            if (allListings[i].tokenAddr == tokenAddr) {
+                _listings[j] = allListings[i];
+                j = j + 1;
+            }
+        }
+
+        return _listings;
+    }
+
     function status(
         address seller,
         address tokenAddr,

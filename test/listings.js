@@ -1726,4 +1726,6 @@ describe("Listing", async () => {
     expect(unitRoyaltyAmountFromMultiplace).to.be.equal(0);
     expect(receiverFromMultiplace).to.be.equal(constants.ZERO_ADDRESS);
   });
+
+  xit("What happens when the unitPrice is less than 100 for 2891 with royalties?", async () => {});
 });
