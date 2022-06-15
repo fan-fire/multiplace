@@ -4,7 +4,12 @@ const {
   constants, // Common constants, like the zero address and largest integers
 } = require("@openzeppelin/test-helpers");
 
-const { NFT_TYPE, listingToObject } = require("./utils");
+const {
+  NFT_TYPE,
+  listingToObject,
+  PROTOCOL_FEE_DEN,
+  PROTOCOL_FEE_NUM,
+} = require("./utils");
 
 Array.prototype.forEachAsync = async function (fn) {
   for (let t of this) {
@@ -14,18 +19,15 @@ Array.prototype.forEachAsync = async function (fn) {
 
 describe("Events", async () => {
   let owner;
-  let notLister;
   let lister;
-  let acc1;
-  let acc2;
-  let acc3;
+  let buyer;
 
   let multiplace;
   let multiplaceProxy;
   let erc20Mock;
 
   beforeEach(async () => {
-    [owner, notLister, lister, acc1, acc2, acc3] = await ethers.getSigners();
+    [owner, lister, buyer] = await ethers.getSigners();
 
     const Multiplace = await ethers.getContractFactory("Multiplace");
     multiplace = await Multiplace.deploy();
@@ -42,6 +44,10 @@ describe("Events", async () => {
     await erc20Mock.deployed();
     // add erc20 as payment token
     await multiplace.connect(owner).addPaymentToken(erc20Mock.address);
+
+    await erc20Mock
+      .connect(owner)
+      .transfer(buyer.address, ethers.utils.parseEther("10"));
   });
 
   it("should emit a Listed event correctly when listing an ERC721", async () => {
@@ -379,9 +385,7 @@ describe("Events", async () => {
 
     const receipt = await tx.wait();
     let events = receipt.events.map((e) => multiplace.interface.parseLog(e));
-
     let eventName = "Listed";
-
     let event = events.find((e) => e.name === eventName);
 
     let expectedEventArgs = {
@@ -413,7 +417,114 @@ describe("Events", async () => {
     expect(actualEventArgs).to.deep.equal(expectedEventArgs);
   });
 
-  it("should emit a Bought event for ERC721", async () => {});
+  it.only("should emit a Bought event for ERC721", async () => {
+    const ERC721 = await ethers.getContractFactory("ERC721Mock");
+    erc721Mock = await ERC721.deploy();
+    await erc721Mock.deployed();
+    await erc721Mock.mint(lister.address);
+    let tokenId = 0;
+    let tokenAddr = erc721Mock.address;
+
+    await erc721Mock
+      .connect(lister)
+      .setApprovalForAll(multiplace.address, true);
+
+    let listPtr = 0;
+    let seller = lister.address;
+    let unitPrice = 10;
+    let amount = 1;
+    let paymentToken = erc20Mock.address;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+    let protocolFee = totalPrice.mul(PROTOCOL_FEE_NUM).div(PROTOCOL_FEE_DEN);
+    let nftType = NFT_TYPE.ERC721;
+    let royaltyReceiver = owner.address;
+    let unitRoyaltyAmount = 0;
+
+    await multiplace
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    await erc20Mock.connect(buyer).approve(multiplace.address, totalPrice);
+
+    let tx = await multiplace
+      .connect(buyer)
+      .buy(seller, tokenAddr, tokenId, amount);
+    let receipt = await tx.wait();
+
+    let events = receipt.events.map((e) => {
+      try {
+        let r = multiplace.interface.parseLog(e);
+        r["contract"] = "multiplace";
+        return r;
+      } catch (_) {
+        try {
+          let r = erc20Mock.interface.parseLog(e);
+          r["contract"] = "erc20Mock";
+          return r;
+        } catch (_) {
+          try {
+            let r = erc721Mock.interface.parseLog(e);
+            r["contract"] = "erc721Mock";
+            return r;
+          } catch (_) {
+            try {
+              let r = erc1155Mock.interface.parseLog(e);
+              r["contract"] = "erc1155Mock";
+              return r;
+            } catch (_) {
+              try {
+                let r = erc721With2981Mock.interface.parseLog(e);
+                r["contract"] = "erc721With2981Mock";
+                return r;
+              } catch (_) {
+                try {
+                  let r = erc1155With2981Mock.interface.parseLog(e);
+                  r["contract"] = "erc1155With2981Mock";
+                  return r;
+                } catch (_) {
+                  return {
+                    name: null,
+                  };
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    let eventName = "Bought";
+    let event = events.find((e) => e.name === eventName);
+
+    let exepectedEvent = {
+      listPtr: listPtr.toString(),
+      tokenAddr: tokenAddr,
+      tokenId: tokenId.toString(),
+      buyer: buyer.address,
+      unitPrice: unitPrice.toString(),
+      amount: amount.toString(),
+      paymentToken: paymentToken,
+      nftType: nftType,
+      royaltyReceiver: royaltyReceiver,
+      unitRoyaltyAmount: unitRoyaltyAmount.toString(),
+    };
+
+    let actualEvent = {
+      listPtr: event.args.listPtr.toString(),
+      tokenAddr: event.args.tokenAddr,
+      tokenId: event.args.tokenId.toString(),
+      buyer: event.args.buyer,
+      unitPrice: event.args.unitPrice.toString(),
+      amount: event.args.amount.toString(),
+      paymentToken: event.args.paymentToken,
+      nftType: event.args.nftType,
+      royaltyReceiver: event.args.royaltyReceiver,
+      unitRoyaltyAmount: event.args.unitRoyaltyAmount.toString(),
+    };
+
+    expect(actualEvent).to.deep.equal(exepectedEvent);
+  });
+
   xit("should emit a Bought event for ERC1155", async () => {});
   xit("should emit a Bought event for partial ERC1155", async () => {});
   xit("should emit a Bought event for remainder of partial and Unlist event when fully depleted ERC1155", async () => {});
