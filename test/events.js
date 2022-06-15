@@ -59,7 +59,7 @@ describe("Events", async () => {
     let tokenAddr = erc721Mock.address;
 
     await erc721Mock
-      .connect(lister)
+      .connect(lister) 
       .setApprovalForAll(multiplace.address, true);
 
     let listPtr = 0;
