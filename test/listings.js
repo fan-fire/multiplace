@@ -1945,5 +1945,155 @@ describe("Listing", async () => {
     expect(listings).to.be.deep.equal(expectedListings);
   });
 
+  it("status updates for 721", async () => {
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 1;
+    let amount = 1;
+    let unitPrice = 10;
+    let paymentToken = erc20Mock.address;
+
+    await erc721Mock
+      .connect(lister)
+      .setApprovalForAll(multiplace.address, true);
+
+    await multiplace
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    let status = await multiplace.status(lister.address, tokenAddr, tokenId);
+
+    var { isSellerOwner, isTokenStillApproved } = status;
+
+    expect(isSellerOwner).to.be.true;
+    expect(isTokenStillApproved).to.be.true;
+
+    await erc721Mock
+      .connect(lister)
+      .setApprovalForAll(multiplace.address, false);
+
+    status = await multiplace.status(lister.address, tokenAddr, tokenId);
+
+    var { isSellerOwner, isTokenStillApproved } = status;
+
+    expect(isSellerOwner).to.be.true;
+    expect(isTokenStillApproved).to.be.false;
+
+    let from = lister.address;
+    let to = acc1.address;
+
+    await erc721Mock
+      .connect(lister)
+      ["safeTransferFrom(address,address,uint256)"](from, to, tokenId);
+
+    status = await multiplace.status(lister.address, tokenAddr, tokenId);
+
+    var { isSellerOwner, isTokenStillApproved } = status;
+
+    expect(isSellerOwner).to.be.false;
+    expect(isTokenStillApproved).to.be.false;
+  });
+
+  it("status updates for 1155 if all listed and one removed", async () => {
+    let tokenAddr = erc1155Mock.address;
+    let tokenId = 1;
+    let amount = 10;
+    let unitPrice = 10;
+    let paymentToken = erc20Mock.address;
+
+    await erc1155Mock
+      .connect(lister)
+      .setApprovalForAll(multiplace.address, true);
+
+    await multiplace
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    let status = await multiplace.status(lister.address, tokenAddr, tokenId);
+
+    var { isSellerOwner, isTokenStillApproved } = status;
+
+    expect(isSellerOwner).to.be.true;
+    expect(isTokenStillApproved).to.be.true;
+
+    await erc1155Mock
+      .connect(lister)
+      .setApprovalForAll(multiplace.address, false);
+
+    status = await multiplace.status(lister.address, tokenAddr, tokenId);
+
+    var { isSellerOwner, isTokenStillApproved } = status;
+
+    expect(isSellerOwner).to.be.true;
+    expect(isTokenStillApproved).to.be.false;
+
+    let from = lister.address;
+    let to = acc1.address;
+    let id = 1;
+    let data = "0x";
+    amount = 1;
+
+    await erc1155Mock
+      .connect(lister)
+      .safeTransferFrom(from, to, id, amount, data);
+
+    status = await multiplace.status(lister.address, tokenAddr, tokenId);
+
+    var { isSellerOwner, isTokenStillApproved } = status;
+
+    expect(isSellerOwner).to.be.false;
+    expect(isTokenStillApproved).to.be.false;
+  });
+
+  it("status updates for 1155 if one listed and one sent", async () => {
+    let tokenAddr = erc1155Mock.address;
+    let tokenId = 1;
+    let amount = 1;
+    let unitPrice = 10;
+    let paymentToken = erc20Mock.address;
+
+    await erc1155Mock
+      .connect(lister)
+      .setApprovalForAll(multiplace.address, true);
+
+    await multiplace
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    let status = await multiplace.status(lister.address, tokenAddr, tokenId);
+
+    var { isSellerOwner, isTokenStillApproved } = status;
+
+    expect(isSellerOwner).to.be.true;
+    expect(isTokenStillApproved).to.be.true;
+
+    await erc1155Mock
+      .connect(lister)
+      .setApprovalForAll(multiplace.address, false);
+
+    status = await multiplace.status(lister.address, tokenAddr, tokenId);
+
+    var { isSellerOwner, isTokenStillApproved } = status;
+
+    expect(isSellerOwner).to.be.true;
+    expect(isTokenStillApproved).to.be.false;
+
+    let from = lister.address;
+    let to = acc1.address;
+    let id = 1;
+    let data = "0x";
+    amount = 1;
+
+    await erc1155Mock
+      .connect(lister)
+      .safeTransferFrom(from, to, id, amount, data);
+
+    status = await multiplace.status(lister.address, tokenAddr, tokenId);
+
+    var { isSellerOwner, isTokenStillApproved } = status;
+
+    expect(isSellerOwner).to.be.true;
+    expect(isTokenStillApproved).to.be.false;
+  });
+
   xit("What happens when the unitPrice is less than 100 for 2891 with royalties?", async () => {});
 });
