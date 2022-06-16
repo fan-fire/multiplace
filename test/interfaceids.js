@@ -1,28 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const {
-  constants, // Common constants, like the zero address and largest integers
-} = require("@openzeppelin/test-helpers");
 
-const ether = require("@openzeppelin/test-helpers/src/ether");
-
-const getInterfaceID = (contractInterface) => {
-  let interfaceID = ethers.constants.Zero;
-  const functions = Object.keys(contractInterface.functions);
-  for (let i = 0; i < functions.length; i++) {
-    // console.log(`\t${interfaceID.toHexString()}`)
-    let f = functions[i];
-    if (f == "supportsInterface(bytes4)") {
-      continue;
-    }
-    // console.log(f);
-    let hash = contractInterface.getSighash(f);
-    // console.log(`\thash: ${hash}`);
-    interfaceID = interfaceID.xor(hash);
-  }
-
-  return interfaceID.toHexString();
-};
+const {getInterfaceID} = require("../utils");
 
 describe("InterfaceId", async () => {
   it("Multiplace has correct interface IDs", async () => {
