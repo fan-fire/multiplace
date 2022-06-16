@@ -1727,11 +1727,223 @@ describe("Listing", async () => {
     expect(receiverFromMultiplace).to.be.equal(constants.ZERO_ADDRESS);
   });
 
-  xit("What happens when the unitPrice is less than 100 for 2891 with royalties?", async () => {});
+  it("getListings works for 721", async () => {
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 1;
+    let amount = 1;
+    let unitPrice = 10;
+    let paymentToken = erc20Mock.address;
 
-  xit("getAddressListings works for 721", async () => {});
-  xit("getAddressListings works for 1155", async () => {});
-  xit("getAddressListings works for 721 with 2981", async () => {});
-  xit("getAddressListings works for 1155 with 2981", async () => {});
-  xit("getAddressListings works for all 4", async () => {});
+    await erc721Mock
+      .connect(lister)
+      .setApprovalForAll(multiplace.address, true);
+
+    await multiplace
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    let listings = await multiplace.getListings(tokenAddr, tokenId);
+    expect(listings.length).to.be.equal(1);
+    listings = listings.map(listingToObject);
+
+    let expectedListings = [
+      {
+        listPtr: 0,
+        tokenAddr: erc721Mock.address,
+        tokenId: tokenId,
+        seller: lister.address,
+        unitPrice: unitPrice.toString(),
+        amount: amount,
+        paymentToken: paymentToken,
+        nftType: NFT_TYPE.ERC721,
+        reservedUntil: 0,
+        reservedFor: constants.ZERO_ADDRESS,
+      },
+    ];
+
+    expect(listings).to.be.deep.equal(expectedListings);
+  });
+
+  it("getListings works for 1155", async () => {
+    let from = lister.address;
+    let to = acc1.address;
+    let id = 1;
+    let amount = 5;
+    let data = "0x";
+
+    await erc1155Mock
+      .connect(lister)
+      .safeTransferFrom(from, to, id, amount, data);
+
+    let tokenAddr = erc1155Mock.address;
+    let tokenId = 1;
+    let unitPrice = 10;
+    let paymentToken = erc20Mock.address;
+
+    await erc1155Mock
+      .connect(lister)
+      .setApprovalForAll(multiplace.address, true);
+
+    await multiplace
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    await erc1155Mock.connect(acc1).setApprovalForAll(multiplace.address, true);
+
+    await multiplace
+      .connect(acc1)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    let listings = await multiplace.getListings(tokenAddr, tokenId);
+    expect(listings.length).to.be.equal(2);
+    listings = listings.map(listingToObject);
+
+    let expectedListings = [
+      {
+        listPtr: 0,
+        tokenAddr: erc1155Mock.address,
+        tokenId: tokenId,
+        seller: lister.address,
+        unitPrice: unitPrice.toString(),
+        amount: amount,
+        paymentToken: paymentToken,
+        nftType: NFT_TYPE.ERC1155,
+        reservedUntil: 0,
+        reservedFor: constants.ZERO_ADDRESS,
+      },
+      {
+        listPtr: 1,
+        tokenAddr: erc1155Mock.address,
+        tokenId: tokenId,
+        seller: acc1.address,
+        unitPrice: unitPrice.toString(),
+        amount: amount,
+        paymentToken: paymentToken,
+        nftType: NFT_TYPE.ERC1155,
+        reservedUntil: 0,
+        reservedFor: constants.ZERO_ADDRESS,
+      },
+    ];
+
+    expect(listings).to.be.deep.equal(expectedListings);
+  });
+
+  it("getAddressListings works for 721", async () => {
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 1;
+    let amount = 1;
+    let unitPrice = 10;
+    let paymentToken = erc20Mock.address;
+
+    await erc721Mock
+      .connect(lister)
+      .setApprovalForAll(multiplace.address, true);
+
+    await multiplace
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    tokenId = 2;
+    await multiplace
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    let listings = await multiplace.getAddressListings([tokenAddr]);
+    expect(listings.length).to.be.equal(2);
+    listings = listings.map(listingToObject);
+
+    let expectedListings = [
+      {
+        listPtr: 0,
+        tokenAddr: erc721Mock.address,
+        tokenId: 1,
+        seller: lister.address,
+        unitPrice: unitPrice.toString(),
+        amount: amount,
+        paymentToken: paymentToken,
+        nftType: NFT_TYPE.ERC721,
+        reservedUntil: 0,
+        reservedFor: constants.ZERO_ADDRESS,
+      },
+      {
+        listPtr: 1,
+        tokenAddr: erc721Mock.address,
+        tokenId: 2,
+        seller: lister.address,
+        unitPrice: unitPrice.toString(),
+        amount: amount,
+        paymentToken: paymentToken,
+        nftType: NFT_TYPE.ERC721,
+        reservedUntil: 0,
+        reservedFor: constants.ZERO_ADDRESS,
+      },
+    ];
+
+    expect(listings).to.be.deep.equal(expectedListings);
+  });
+  it("getAddressListings works for 1155", async () => {
+    let from = lister.address;
+    let to = acc1.address;
+    let id = 1;
+    let amount = 5;
+    let data = "0x";
+
+    await erc1155Mock
+      .connect(lister)
+      .safeTransferFrom(from, to, id, amount, data);
+
+    let tokenAddr = erc1155Mock.address;
+    let tokenId = 1;
+    let unitPrice = 10;
+    let paymentToken = erc20Mock.address;
+
+    await erc1155Mock
+      .connect(lister)
+      .setApprovalForAll(multiplace.address, true);
+
+    await multiplace
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    await erc1155Mock.connect(acc1).setApprovalForAll(multiplace.address, true);
+
+    await multiplace
+      .connect(acc1)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    let listings = await multiplace.getAddressListings([tokenAddr]);
+    expect(listings.length).to.be.equal(2);
+    listings = listings.map(listingToObject);
+
+    let expectedListings = [
+      {
+        listPtr: 0,
+        tokenAddr: erc1155Mock.address,
+        tokenId: tokenId,
+        seller: lister.address,
+        unitPrice: unitPrice.toString(),
+        amount: amount,
+        paymentToken: paymentToken,
+        nftType: NFT_TYPE.ERC1155,
+        reservedUntil: 0,
+        reservedFor: constants.ZERO_ADDRESS,
+      },
+      {
+        listPtr: 1,
+        tokenAddr: erc1155Mock.address,
+        tokenId: tokenId,
+        seller: acc1.address,
+        unitPrice: unitPrice.toString(),
+        amount: amount,
+        paymentToken: paymentToken,
+        nftType: NFT_TYPE.ERC1155,
+        reservedUntil: 0,
+        reservedFor: constants.ZERO_ADDRESS,
+      },
+    ];
+
+    expect(listings).to.be.deep.equal(expectedListings);
+  });
+
+  xit("What happens when the unitPrice is less than 100 for 2891 with royalties?", async () => {});
 });
