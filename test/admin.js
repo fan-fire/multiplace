@@ -282,23 +282,5 @@ describe("Admin", async (accounts) => {
     expect(adminSupports165).to.be.true;
   });
 
-  it.skip("Admin supports correct IAdmin", async () => {
-    multiplace = await getMultiplace();
-    let adminAddr = await multiplace.admin();
-    const Admin = await ethers.getContractFactory("Admin");
-    let admin = await Admin.attach(adminAddr);
-    // const IAdmin = await ethers.getContractFactory("IAdmin");
-
-    const IERC165 = await ethers.getContractFactory(
-      require("../artifacts/@openzeppelin/contracts/utils/introspection/ERC165.sol/ERC165.json")
-        .abi
-    );
-
-    let interfaceId165 = getInterfaceID(IERC165.interface);
-    console.log(`interfaceId165: ${interfaceId165}`);
-    let interfaceId = getInterfaceID(admin.interface);
-    console.log(`interfaceId: ${interfaceId}`);
-  });
-
   xit("Can't change protocol wallet to ZERO_ADDRESS", async () => {});
 });
