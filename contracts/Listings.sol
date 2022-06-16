@@ -477,15 +477,4 @@ contract Listings is IListings {
             tokenType = NFT_TYPE.UNKNOWN;
         }
     }
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        pure
-        override
-        returns (bool)
-    {
-        return
-            interfaceId == type(IListings).interfaceId ||
-            interfaceId == type(IERC165).interfaceId;
-    }
 }
