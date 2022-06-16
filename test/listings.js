@@ -1726,4 +1726,12 @@ describe("Listing", async () => {
     expect(unitRoyaltyAmountFromMultiplace).to.be.equal(0);
     expect(receiverFromMultiplace).to.be.equal(constants.ZERO_ADDRESS);
   });
+
+  xit("What happens when the unitPrice is less than 100 for 2891 with royalties?", async () => {});
+
+  xit("getAddressListings works for 721", async () => {});
+  xit("getAddressListings works for 1155", async () => {});
+  xit("getAddressListings works for 721 with 2981", async () => {});
+  xit("getAddressListings works for 1155 with 2981", async () => {});
+  xit("getAddressListings works for all 4", async () => {});
 });

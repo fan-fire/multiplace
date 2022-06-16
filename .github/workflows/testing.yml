@@ -27,6 +27,10 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
       - name: Run Hardhat Tests
+        env:
+          MNEMONIC: ${{ secrets.MNEMONIC }}
+          POLYGON_NODE: ${{ secrets.POLYGON_NODE }}
+          MUMBAI_NODE: ${{ secrets.MUMBAI_NODE }}
         id: testing
         run: bash .github/scripts/testing.sh
       - name: Read test_output.log

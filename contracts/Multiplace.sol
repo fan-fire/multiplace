@@ -35,30 +35,30 @@ contract Multiplace is IMultiplace, Storage, Pausable {
             paymentToken
         );
 
-        // IListings.Listing memory listing = listings.getListing(
-        //     msg.sender,
-        //     tokenAddr,
-        //     tokenId
-        // );
+        IListings.Listing memory listing = getListing(
+            msg.sender,
+            tokenAddr,
+            tokenId
+        );
 
-        // IListings.Royalty memory royalty = listings.getUnitRoyalties(
-        //     listing.seller,
-        //     listing.tokenAddr,
-        //     listing.tokenId
-        // );
+        IListings.Royalty memory royalty = getUnitRoyalties(
+            listing.seller,
+            listing.tokenAddr,
+            listing.tokenId
+        );
 
-        // emit Listed(
-        //     listing.listPtr,
-        //     listing.tokenAddr,
-        //     listing.tokenId,
-        //     listing.seller,
-        //     listing.unitPrice,
-        //     listing.amount,
-        //     listing.paymentToken,
-        //     listing.nftType,
-        //     royalty.receiver,
-        //     royalty.unitRoyaltyAmount
-        // );
+        emit Listed(
+            listing.listPtr,
+            listing.tokenAddr,
+            listing.tokenId,
+            listing.seller,
+            listing.unitPrice,
+            listing.amount,
+            listing.paymentToken,
+            listing.nftType,
+            royalty.receiver,
+            royalty.unitRoyaltyAmount
+        );
     }
 
     function buy(
@@ -66,8 +66,8 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         address tokenAddr,
         uint256 tokenId,
         uint256 amount
-    ) external override {
-        IListings.Listing memory listing = listings.getListing(
+    ) external override whenNotPaused {
+        IListings.Listing memory listing = getListing(
             seller,
             tokenAddr,
             tokenId
@@ -91,7 +91,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
 
         // get royalties from mapping
 
-        IListings.Royalty memory royalty = listings.getUnitRoyalties(
+        IListings.Royalty memory royalty = getUnitRoyalties(
             seller,
             tokenAddr,
             tokenId
@@ -120,12 +120,12 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         uint256 totalProtocolFee = (totalPrice * admin.protocolFeeNumerator()) /
             admin.protocolFeeDenominator();
 
+        uint256 totalSeller = totalPrice - totalRoyalty - totalProtocolFee;
+
         // pay seller
         _balances[paymentToken][listing.seller] =
             _balances[paymentToken][listing.seller] +
-            totalPrice -
-            totalRoyalty -
-            totalProtocolFee;
+            totalSeller;
 
         // pay artist
         _balances[paymentToken][royalty.receiver] =
@@ -159,6 +159,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
                 ""
             );
         }
+
         emit Bought(
             listing.listPtr,
             tokenAddr,
@@ -173,37 +174,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         );
     }
 
-    function unlistStale(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId
-    ) external override {
-        listings.unlistStale(seller, tokenAddr, tokenId);
-    }
-
-    function reserve(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId,
-        uint256 period,
-        address reservee
-    ) external override onlyRole(RESERVER_ROLE) {
-        listings.reserve(seller, tokenAddr, tokenId, period, reservee);
-    }
-
-    function getReservedState(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId
-    )
-        external
-        view
-        override
-        returns (address reservedFor, uint256 reservedUntil)
-    {
-        return (listings.getReservedState(seller, tokenAddr, tokenId));
-    }
-
     function unlist(address tokenAddr, uint256 tokenId)
         public
         override
@@ -214,9 +184,69 @@ contract Multiplace is IMultiplace, Storage, Pausable {
             "Token not listed for msg.sender"
         );
         listings.unlist(msg.sender, tokenAddr, tokenId);
+        emit Unlisted(msg.sender, tokenAddr, tokenId);
     }
 
-    function pullFunds(address paymentToken, uint256 amount) external override {
+    function unlistStale(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    ) external override {
+        listings.unlistStale(seller, tokenAddr, tokenId);
+        emit UnlistStale(seller, tokenAddr, tokenId);
+    }
+
+    function reserve(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId,
+        uint256 period,
+        address reservee
+    ) external override onlyRole(RESERVER_ROLE) {
+        listings.reserve(seller, tokenAddr, tokenId, period, reservee);
+        emit Reserved(seller, tokenAddr, tokenId, reservee, period);
+    }
+
+    function updateRoyalties(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId,
+        uint256 newUnitRoyaltyAmount
+    ) public override {
+        listings.updateRoyalties(
+            msg.sender,
+            seller,
+            tokenAddr,
+            tokenId,
+            newUnitRoyaltyAmount
+        );
+
+        emit RoyaltiesSet(
+            seller,
+            tokenAddr,
+            tokenId,
+            getUnitRoyalties(seller, tokenAddr, tokenId).unitRoyaltyAmount
+        );
+    }
+
+    function addPaymentToken(address paymentToken)
+        public
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        require(
+            !admin.isPaymentToken(paymentToken),
+            "Payment token already added"
+        );
+        admin.addPaymentToken(paymentToken);
+        emit PaymentTokenAdded(paymentToken);
+    }
+
+    function pullFunds(address paymentToken, uint256 amount)
+        external
+        override
+        whenNotPaused
+    {
         // Checks
         require(
             admin.isPaymentToken(paymentToken),
@@ -238,47 +268,13 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         emit FundsWithdrawn(msg.sender, paymentToken, amount);
     }
 
-    function pause() public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _pause();
-    }
-
-    function unpause() public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _unpause();
-    }
-
-    function addPaymentToken(address paymentToken)
-        public
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        require(
-            !admin.isPaymentToken(paymentToken),
-            "Payment token already added"
-        );
-        admin.addPaymentToken(paymentToken);
-    }
-
-    function updateRoyalties(
-        address seller,
-        address tokenAddr,
-        uint256 tokenId,
-        uint256 newRoyaltyAmount
-    ) public override {
-        listings.updateRoyalties(
-            msg.sender,
-            seller,
-            tokenAddr,
-            tokenId,
-            newRoyaltyAmount
-        );
-    }
-
     function changeProtocolWallet(address newProtocolWallet)
         public
         override
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         admin.changeProtocolWallet(newProtocolWallet);
+        emit ProtocolWalletChanged(newProtocolWallet);
     }
 
     function changeProtocolFee(uint256 feeNumerator, uint256 feeDenominator)
@@ -287,6 +283,36 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         admin.changeProtocolFee(feeNumerator, feeDenominator);
+        emit ProtocolFeeChanged(feeNumerator, feeDenominator);
+    }
+
+    function pause() public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _pause();
+    }
+
+    function unpause() public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _unpause();
+    }
+
+    /* ---------------------------------------------*
+     *                                               *
+     *                                               *
+     *                  VIEW METHODS                 *
+     *                                               *
+     *                                               *
+     * ----------------------------------------------*/
+
+    function getReservedState(
+        address seller,
+        address tokenAddr,
+        uint256 tokenId
+    )
+        external
+        view
+        override
+        returns (address reservedFor, uint256 reservedUntil)
+    {
+        return (listings.getReservedState(seller, tokenAddr, tokenId));
     }
 
     function getListingPointer(
@@ -386,6 +412,36 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         }
     }
 
+    function getAddressListings(address[] memory tokenAddrs)
+        public
+        view
+        override
+        returns (IListings.Listing[] memory _listings)
+    {
+        IListings.Listing[] memory allListings = listings.getAllListings();
+        uint256 total = 0;
+        for (uint256 i = 0; i < allListings.length; i++) {
+            for (uint256 j = 0; j < tokenAddrs.length; j++) {
+                if (allListings[i].tokenAddr == tokenAddrs[j]) {
+                    total++;
+                }
+            }
+        }
+
+        _listings = new IListings.Listing[](total);
+        uint256 k = 0;
+        for (uint256 i = 0; i < allListings.length; i++) {
+            for (uint256 j = 0; j < tokenAddrs.length; j++) {
+                if (allListings[i].tokenAddr == tokenAddrs[j]) {
+                    _listings[k] = allListings[i];
+                    k = k + 1;
+                }
+            }
+        }
+
+        return _listings;
+    }
+
     function status(
         address seller,
         address tokenAddr,
@@ -412,8 +468,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         return
             interfaceId == type(IMultiplace).interfaceId ||
             interfaceId == type(IAccessControl).interfaceId ||
-            interfaceId == type(IERC165).interfaceId ||
-            super.supportsInterface(interfaceId);
+            interfaceId == type(IERC165).interfaceId;
     }
 
     function protocolFeeNumerator() public view override returns (uint256) {

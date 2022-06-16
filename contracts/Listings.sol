@@ -25,34 +25,6 @@ contract Listings is IListings {
     mapping(address => mapping(uint256 => mapping(address => uint256)))
         internal _sellersPtr; //Mapping from tokenAddr.tokenId.lister -> listersPtr to be able to pop a lister given the address
 
-    event Listed(
-        uint256 listPtr,
-        address indexed tokenAddr,
-        uint256 indexed tokenId,
-        address indexed seller,
-        uint256 unitPrice,
-        uint256 amount,
-        address paymentToken,
-        IListings.NFT_TYPE nftType,
-        address royaltyReceiver,
-        uint256 unitRoyaltyAmount
-    );
-    event Bought(
-        uint256 listPtr,
-        address indexed tokenAddr,
-        uint256 indexed tokenId,
-        address indexed seller,
-        address buyer,
-        uint256 unitPrice,
-        uint256 amount,
-        address paymentToken,
-        IListings.NFT_TYPE nftType,
-        address royaltyReceiver,
-        uint256 unitRoyaltyAmount
-    );
-
-    event Unlisted(address indexed tokenAddr, uint256 indexed tokenId);
-
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this function");
         _;
@@ -172,19 +144,6 @@ contract Listings is IListings {
 
         // add to _listings
         _listings.push(listing);
-
-        emit Listed(
-            listPtr,
-            tokenAddr,
-            tokenId,
-            lister,
-            unitPrice,
-            amount,
-            paymentToken,
-            _nftType,
-            royalty.receiver,
-            royalty.unitRoyaltyAmount
-        );
     }
 
     function unlist(
@@ -231,20 +190,6 @@ contract Listings is IListings {
         if (listing.amount - amount > 0) {
             listing.amount = listing.amount - amount;
             _listings[listing.listPtr] = listing;
-
-            // emit Bought(
-            //     listing.listPtr,
-            //     listing.tokenAddr,
-            //     listing.tokenId,
-            //     listing.seller,
-            //     buyer,
-            //     listing.unitPrice,
-            //     listing.amount,
-            //     listing.paymentToken,
-            //     listing.nftType,
-            //     listing.royaltyReceiver,
-            //     listing.unitRoyaltyAmount
-            // );
         } else {
             assert(_unlist(listing));
         }
@@ -288,7 +233,6 @@ contract Listings is IListings {
             listingToRemove.tokenId
         ] = false;
         assert(numListings >= 0);
-        emit Unlisted(lastListing.tokenAddr, lastListing.tokenId);
         return true;
     }
 
@@ -297,7 +241,7 @@ contract Listings is IListings {
         address seller,
         address tokenAddr,
         uint256 tokenId,
-        uint256 newRoyaltyAmount
+        uint256 newUnitRoyaltyAmount
     ) public override onlyOwner {
         require(_isListed[seller][tokenAddr][tokenId], "NFT not listed");
         Royalty memory royalty = getUnitRoyalties(seller, tokenAddr, tokenId);
@@ -307,7 +251,7 @@ contract Listings is IListings {
             "Only royalty receiver can update"
         );
         require(
-            royalty.unitRoyaltyAmount != newRoyaltyAmount,
+            royalty.unitRoyaltyAmount != newUnitRoyaltyAmount,
             "Invalid amount"
         );
 
@@ -326,7 +270,7 @@ contract Listings is IListings {
             royalty.receiver = receiver;
             royalty.unitRoyaltyAmount = royaltyAmount;
         } else {
-            royalty.unitRoyaltyAmount = newRoyaltyAmount;
+            royalty.unitRoyaltyAmount = newUnitRoyaltyAmount;
         }
         _unitRoyalties[seller][tokenAddr][tokenId] = royalty;
     }
@@ -405,8 +349,6 @@ contract Listings is IListings {
         }
 
         // unlist
-        // emit UnlistStale(tokenAddr, tokenId);
-
         require(_unlist(listing), "NFT could not be unlisted");
     }
 
@@ -489,7 +431,6 @@ contract Listings is IListings {
         listing.reservedUntil = block.timestamp + period;
 
         _listings[listing.listPtr] = listing;
-        // emit Reserved(tokenAddr, tokenId, reservee, period, block.timestamp + period);
     }
 
     function getReservedState(

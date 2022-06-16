@@ -132,6 +132,6 @@ interface IListings is IERC165 {
         address seller,
         address tokenAddr,
         uint256 tokenId,
-        uint256 newRoyaltyAmount
+        uint256 newUnitRoyaltyAmount
     ) external;
 }

@@ -8,14 +8,11 @@ import "./IAdmin.sol";
 
 abstract contract Storage is AccessControl {
     address public currentMultiplace;
-    bytes32 public constant RESERVER_ROLE = keccak256("RESERVER_ROLE");
-    address public _protocolWallet;
-    mapping(address => bool) internal _isPaymentToken; //Whether a given ERC20 contract is an excepted payment token
-    uint256 internal _protocolFeeNumerator = 250000000000; //Numerator of the protocol fee
-    uint256 internal _protocolFeeDenominator = 10000000000000; //Denominator of the protocol fee
-
-    address public owner;
     IAdmin public admin;
     IListings public listings;
+
+    address internal owner;
+    mapping(address => bool) internal _isPaymentToken; //Whether a given ERC20 contract is an excepted payment token
+    bytes32 internal constant RESERVER_ROLE = keccak256("RESERVER_ROLE");
     mapping(address => mapping(address => uint256)) internal _balances; //Balances of each address for each ERC20 contract, 0x00 is the native coin
 }
