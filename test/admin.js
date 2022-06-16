@@ -300,9 +300,5 @@ describe("Admin", async (accounts) => {
     console.log(`interfaceId: ${interfaceId}`);
   });
 
-  it.skip("Can't change protocol wallet to ZERO_ADDRESS", async () => {});
-
-  it.skip("ProtocolWalletChanged event emitted", async () => {});
-  it.skip("ProtocolFeeChanged event emitted", async () => {});
-  it.skip("PaymentTokenAdded event emitted", async () => {});
+  xit("Can't change protocol wallet to ZERO_ADDRESS", async () => {});
 });
