@@ -54,7 +54,7 @@ interface IMultiplace is IERC165 {
         address indexed seller,
         address indexed tokenAddr,
         uint256 indexed tokenId,
-        uint256 royaltyAmount
+        uint256 unitRoyaltyAmount
     );
 
     event PaymentTokenAdded(address indexed paymentToken);
@@ -103,7 +103,7 @@ interface IMultiplace is IERC165 {
         address seller,
         address tokenAddr,
         uint256 tokenId,
-        uint256 newRoyaltyAmount
+        uint256 newUnitRoyaltyAmount
     ) external;
 
     function addPaymentToken(address paymentToken) external;

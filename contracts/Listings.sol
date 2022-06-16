@@ -241,7 +241,7 @@ contract Listings is IListings {
         address seller,
         address tokenAddr,
         uint256 tokenId,
-        uint256 newRoyaltyAmount
+        uint256 newUnitRoyaltyAmount
     ) public override onlyOwner {
         require(_isListed[seller][tokenAddr][tokenId], "NFT not listed");
         Royalty memory royalty = getUnitRoyalties(seller, tokenAddr, tokenId);
@@ -251,7 +251,7 @@ contract Listings is IListings {
             "Only royalty receiver can update"
         );
         require(
-            royalty.unitRoyaltyAmount != newRoyaltyAmount,
+            royalty.unitRoyaltyAmount != newUnitRoyaltyAmount,
             "Invalid amount"
         );
 
@@ -270,7 +270,7 @@ contract Listings is IListings {
             royalty.receiver = receiver;
             royalty.unitRoyaltyAmount = royaltyAmount;
         } else {
-            royalty.unitRoyaltyAmount = newRoyaltyAmount;
+            royalty.unitRoyaltyAmount = newUnitRoyaltyAmount;
         }
         _unitRoyalties[seller][tokenAddr][tokenId] = royalty;
     }

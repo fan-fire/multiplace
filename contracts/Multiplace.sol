@@ -35,13 +35,13 @@ contract Multiplace is IMultiplace, Storage, Pausable {
             paymentToken
         );
 
-        IListings.Listing memory listing = listings.getListing(
+        IListings.Listing memory listing = getListing(
             msg.sender,
             tokenAddr,
             tokenId
         );
 
-        IListings.Royalty memory royalty = listings.getUnitRoyalties(
+        IListings.Royalty memory royalty = getUnitRoyalties(
             listing.seller,
             listing.tokenAddr,
             listing.tokenId
@@ -67,7 +67,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         uint256 tokenId,
         uint256 amount
     ) external override whenNotPaused {
-        IListings.Listing memory listing = listings.getListing(
+        IListings.Listing memory listing = getListing(
             seller,
             tokenAddr,
             tokenId
@@ -91,7 +91,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
 
         // get royalties from mapping
 
-        IListings.Royalty memory royalty = listings.getUnitRoyalties(
+        IListings.Royalty memory royalty = getUnitRoyalties(
             seller,
             tokenAddr,
             tokenId
@@ -120,12 +120,12 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         uint256 totalProtocolFee = (totalPrice * admin.protocolFeeNumerator()) /
             admin.protocolFeeDenominator();
 
+        uint256 totalSeller = totalPrice - totalRoyalty - totalProtocolFee;
+
         // pay seller
         _balances[paymentToken][listing.seller] =
             _balances[paymentToken][listing.seller] +
-            totalPrice -
-            totalRoyalty -
-            totalProtocolFee;
+            totalSeller;
 
         // pay artist
         _balances[paymentToken][royalty.receiver] =
@@ -211,17 +211,22 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         address seller,
         address tokenAddr,
         uint256 tokenId,
-        uint256 newRoyaltyAmount
+        uint256 newUnitRoyaltyAmount
     ) public override {
         listings.updateRoyalties(
             msg.sender,
             seller,
             tokenAddr,
             tokenId,
-            newRoyaltyAmount
+            newUnitRoyaltyAmount
         );
 
-        emit RoyaltiesSet(seller, tokenAddr, tokenId, newRoyaltyAmount);
+        emit RoyaltiesSet(
+            seller,
+            tokenAddr,
+            tokenId,
+            getUnitRoyalties(seller, tokenAddr, tokenId).unitRoyaltyAmount
+        );
     }
 
     function addPaymentToken(address paymentToken)
