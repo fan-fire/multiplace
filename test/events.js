@@ -1366,12 +1366,236 @@ describe("Events", async () => {
     expect(actualEvent).to.deep.equal(exepectedEvent);
   });
 
-  xit("should emit a PaymentTokenAdded event", async () => {});
-  xit("should emit a FundsWithdrawn event for withdrawal", async () => {});
+  it("should emit a PaymentTokenAdded event", async () => {
+    const ERC20Mock = await ethers.getContractFactory("ERC20Mock");
+    erc20Mock = await ERC20Mock.deploy();
+    await erc20Mock.deployed();
+    // add erc20 as payment token
+    let tx = await multiplace.connect(owner).addPaymentToken(erc20Mock.address);
+    let receipt = await tx.wait();
 
-  xit("should emit a ProtocolWalletChanged event when changing protocol wallet", async () => {});
-  xit("should emit a ProtocolFeeChanged event when changing protocol wallet", async () => {});
+    let events = receipt.events.map((e) => {
+      try {
+        let r = multiplace.interface.parseLog(e);
+        r["contract"] = "multiplace";
+        return r;
+      } catch (_) {
+        return { name: null };
+      }
+    });
 
-  xit("should emit event when paused", async () => {});
-  xit("should emit event when unpaused", async () => {});
+    let eventName = "PaymentTokenAdded";
+    let contract = "multiplace";
+    let event = events.find(
+      (e) => e.name === eventName && e.contract === contract
+    );
+
+    let exepectedEvent = {
+      paymentToken: erc20Mock.address,
+    };
+
+    let actualEvent = {
+      paymentToken: event.args.paymentToken,
+    };
+
+    expect(actualEvent).to.deep.equal(exepectedEvent);
+  });
+  it("should emit a FundsWithdrawn event for withdrawal", async () => {
+    const ERC721 = await ethers.getContractFactory("ERC721Mock");
+    erc721Mock = await ERC721.deploy();
+    await erc721Mock.deployed();
+    await erc721Mock.mint(lister.address);
+    let tokenId = 0;
+    let tokenAddr = erc721Mock.address;
+
+    await erc721Mock
+      .connect(lister)
+      .setApprovalForAll(multiplace.address, true);
+
+    let seller = lister.address;
+    let unitPrice = 10;
+    let amount = 1;
+    let paymentToken = erc20Mock.address;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+
+    await multiplace
+      .connect(lister)
+      .list(tokenAddr, tokenId, amount, unitPrice, paymentToken);
+
+    await erc20Mock.connect(buyer).approve(multiplace.address, totalPrice);
+
+    await multiplace.connect(buyer).buy(seller, tokenAddr, tokenId, amount);
+
+    let paymentTokenAmount = await multiplace.getBalance(
+      paymentToken,
+      lister.address
+    );
+    let tx = await multiplace
+      .connect(lister)
+      .pullFunds(paymentToken, paymentTokenAmount);
+    let receipt = await tx.wait();
+
+    let events = receipt.events.map((e) => {
+      try {
+        let r = multiplace.interface.parseLog(e);
+        r["contract"] = "multiplace";
+        return r;
+      } catch (_) {
+        return { name: null };
+      }
+    });
+
+    let eventName = "FundsWithdrawn";
+    let contract = "multiplace";
+    let event = events.find(
+      (e) => e.name === eventName && e.contract === contract
+    );
+
+    let exepectedEvent = {
+      to: seller,
+      paymentToken: paymentToken,
+      amount: paymentTokenAmount.toString(),
+    };
+
+    let actualEvent = {
+      to: event.args.to,
+      paymentToken: event.args.paymentToken,
+      amount: event.args.amount.toString(),
+    };
+
+    expect(actualEvent).to.deep.equal(exepectedEvent);
+  });
+
+  it("should emit a ProtocolWalletChanged event when changing protocol wallet", async () => {
+    let newProtocolWallet = ethers.Wallet.createRandom();
+    let tx = await multiplace
+      .connect(owner)
+      .changeProtocolWallet(newProtocolWallet.address);
+    let receipt = await tx.wait();
+
+    let events = receipt.events.map((e) => {
+      try {
+        let r = multiplace.interface.parseLog(e);
+        r["contract"] = "multiplace";
+        return r;
+      } catch (_) {
+        return { name: null };
+      }
+    });
+
+    let eventName = "ProtocolWalletChanged";
+    let contract = "multiplace";
+    let event = events.find(
+      (e) => e.name === eventName && e.contract === contract
+    );
+
+    let exepectedEvent = {
+      newProtocolWallet: newProtocolWallet.address,
+    };
+
+    let actualEvent = {
+      newProtocolWallet: event.args.newProtocolWallet,
+    };
+
+    expect(actualEvent).to.deep.equal(exepectedEvent);
+  });
+  it("should emit a ProtocolFeeChanged event when changing protocol wallet", async () => {
+    let newFeeNumerator = ethers.BigNumber.from(10);
+    let newFeeDenominator = ethers.BigNumber.from(100);
+
+    let tx = await multiplace
+      .connect(owner)
+      .changeProtocolFee(newFeeNumerator, newFeeDenominator);
+    let receipt = await tx.wait();
+
+    let events = receipt.events.map((e) => {
+      try {
+        let r = multiplace.interface.parseLog(e);
+        r["contract"] = "multiplace";
+        return r;
+      } catch (_) {
+        return { name: null };
+      }
+    });
+
+    let eventName = "ProtocolFeeChanged";
+    let contract = "multiplace";
+    let event = events.find(
+      (e) => e.name === eventName && e.contract === contract
+    );
+
+    let exepectedEvent = {
+      feeNumerator: newFeeNumerator.toString(),
+      feeDenominator: newFeeDenominator.toString(),
+    };
+
+    let actualEvent = {
+      feeNumerator: event.args.feeNumerator.toString(),
+      feeDenominator: event.args.feeDenominator.toString(),
+    };
+
+    expect(actualEvent).to.deep.equal(exepectedEvent);
+  });
+
+  it("should emit event when paused", async () => {
+    let tx = await multiplace.connect(owner).pause();
+    let receipt = await tx.wait();
+
+    let events = receipt.events.map((e) => {
+      try {
+        let r = multiplace.interface.parseLog(e);
+        r["contract"] = "multiplace";
+        return r;
+      } catch (_) {
+        return { name: null };
+      }
+    });
+
+    let eventName = "Paused";
+    let contract = "multiplace";
+    let event = events.find(
+      (e) => e.name === eventName && e.contract === contract
+    );
+
+    let exepectedEvent = {
+      account: owner.address,
+    };
+
+    let actualEvent = {
+      account: event.args.account,
+    };
+
+    expect(actualEvent).to.deep.equal(exepectedEvent);
+  });
+  it("should emit event when unpaused", async () => {
+    await multiplace.connect(owner).pause();
+    let tx = await multiplace.connect(owner).unpause();
+    let receipt = await tx.wait();
+
+    let events = receipt.events.map((e) => {
+      try {
+        let r = multiplace.interface.parseLog(e);
+        r["contract"] = "multiplace";
+        return r;
+      } catch (_) {
+        return { name: null };
+      }
+    });
+
+    let eventName = "Unpaused";
+    let contract = "multiplace";
+    let event = events.find(
+      (e) => e.name === eventName && e.contract === contract
+    );
+
+    let exepectedEvent = {
+      account: owner.address,
+    };
+
+    let actualEvent = {
+      account: event.args.account,
+    };
+
+    expect(actualEvent).to.deep.equal(exepectedEvent);
+  });
 });
