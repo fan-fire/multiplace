@@ -282,5 +282,36 @@ describe("Admin", async (accounts) => {
     expect(adminSupports165).to.be.true;
   });
 
+  it("Can't add the same payment token twice", async () => {
+    let dummyPaymentTokenAddress = notOwner.address;
+    multiplace = await getMultiplace();
+    await multiplace.connect(owner).addPaymentToken(dummyPaymentTokenAddress);
+
+    let isPaymentToken = await multiplace.isPaymentToken(
+      dummyPaymentTokenAddress
+    );
+    expect(isPaymentToken).to.be.true;
+
+    await expect(
+      multiplace.connect(owner).addPaymentToken(dummyPaymentTokenAddress)
+    ).to.be.revertedWith("Payment token already added");
+  });
+
+  it("Can't get balance for unkown payment token", async () => {
+    let dummyPaymentTokenAddress = notOwner.address;
+    multiplace = await getMultiplace();
+    let isPaymentToken = await multiplace.isPaymentToken(
+      dummyPaymentTokenAddress
+    );
+
+    expect(isPaymentToken).to.be.false;
+
+    await expect(
+      multiplace
+        .connect(owner)
+        .getBalance(dummyPaymentTokenAddress, owner.address)
+    ).to.be.revertedWith("Unkown payment token");
+  });
+
   xit("Can't change protocol wallet to ZERO_ADDRESS", async () => {});
 });

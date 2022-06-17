@@ -57,5 +57,5 @@ module.exports = {
   RESERVER_ROLE,
   PROTOCOL_FEE_DEN,
   PROTOCOL_FEE_NUM,
-  getInterfaceID
+  getInterfaceID,
 };

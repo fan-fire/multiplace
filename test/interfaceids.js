@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-const {getInterfaceID} = require("./utils");
+const { getInterfaceID } = require("./utils");
 
 describe("InterfaceId", async () => {
   it("Multiplace has correct interface IDs", async () => {

@@ -1136,6 +1136,42 @@ describe("Buying", async () => {
     ).to.be.revertedWith("Token not listed");
   });
 
+  it("fails if amount in buy is less than amount in listing for 721", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc721Mock.address;
+    let tokenId = 2;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let amount = listing.amount.add(1);
+    let unitPrice = listing.unitPrice;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+
+    await erc20Mock.connect(buyer1).approve(multiplace.address, totalPrice);
+
+    await expect(
+      multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount)
+    ).to.be.revertedWith("Not enough amount in listing");
+  });
+
+  it("fails if amount in buy is less than amount in listing for 1155", async () => {
+    let sellerAddr = seller.address;
+    let tokenAddr = erc1155Mock.address;
+    let tokenId = 2;
+
+    let listing = await multiplace.getListing(sellerAddr, tokenAddr, tokenId);
+
+    let amount = listing.amount.add(1);
+    let unitPrice = listing.unitPrice;
+    let totalPrice = ethers.BigNumber.from(amount).mul(unitPrice);
+
+    await erc20Mock.connect(buyer1).approve(multiplace.address, totalPrice);
+
+    await expect(
+      multiplace.connect(buyer1).buy(sellerAddr, tokenAddr, tokenId, amount)
+    ).to.be.revertedWith("Not enough amount in listing");
+  });
+
   it.skip("fails if buyer doens't have enough ERC20 balance", async () => {
     let sellerAddr = seller.address;
     let tokenAddr = erc721With2981Mock.address;
