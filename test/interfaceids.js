@@ -25,8 +25,8 @@ describe("InterfaceId", async () => {
     let supports165 = await multiplace.supportsInterface(INTERFACE_ID_165);
     expect(supports165).to.be.true;
 
-    // let IMultiplaceID = "0x52ed7671";
-    let IMultiplaceID = getInterfaceID(IMultiplace);
+    let IMultiplaceID = "0x52ed7671";
+    // let IMultiplaceID = getInterfaceID(IMultiplace);
     let supportsIMultiplace = await multiplace.supportsInterface(IMultiplaceID);
     expect(supportsIMultiplace).to.be.true;
 
