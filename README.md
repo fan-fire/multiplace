@@ -393,4 +393,5 @@ npx prettier '**/*.{json,sol,md}' --check
 npx prettier '**/*.{json,sol,md}' --write
 npx solhint 'contracts/**/*.sol'
 npx solhint 'contracts/**/*.sol' --fix
+npx hardhat flatten contracts/Multiplace.sol > flattened.sol
 ```
