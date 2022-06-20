@@ -24,9 +24,9 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  */
 module.exports = {
   solidity: "0.8.5",
-  settings: {
-    optimizer: { enabled: true, runs: 200 },
-  },
+  // settings: {
+  //   optimizer: { enabled: true, runs: 200 },
+  // },
   networks: {
     polygon: {
       accounts: {
@@ -34,7 +34,7 @@ module.exports = {
       },
       url: process.env.POLYGON_NODE,
       chainId: 137,
-      gasPrice: 300 * 10 ** 9,
+      gasPrice: 45 * 10 ** 9,
     },
     mumbai: {
       accounts: {
