@@ -26,6 +26,7 @@
     "@openzeppelin/contracts": "^4.6.0",
     "@openzeppelin/test-helpers": "^0.5.15",
     "@rarible/trezor-provider": "^0.0.13",
+    "@truffle/hdwallet-provider": "^2.0.9",
     "hardhat-contract-sizer": "^2.5.1"
   }
 }
