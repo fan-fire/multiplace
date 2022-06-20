@@ -1590,8 +1590,9 @@ describe("Reserving", async () => {
     await network.provider.send("evm_mine"); //Mine to let the increase time take effect on getBlock('latest')
     now = (await ethers.provider.getBlock("latest")).timestamp;
 
-    expect(now.toString()).to.be.equal(
-      reservedUntil.toString(),
+    expect(now).to.be.within(
+      reservedUntil - 1,
+      reservedUntil + 1,
       "should have moved on to reservedUntil now"
     );
 
@@ -1685,8 +1686,9 @@ describe("Reserving", async () => {
     await network.provider.send("evm_mine"); //Mine to let the increase time take effect on getBlock('latest')
     now = (await ethers.provider.getBlock("latest")).timestamp;
 
-    expect(now.toString()).to.be.equal(
-      reservedUntil.toString(),
+    expect(now).to.be.within(
+      reservedUntil - 1,
+      reservedUntil + 1,
       "should have moved on to reservedUntil now"
     );
 
@@ -1772,8 +1774,9 @@ describe("Reserving", async () => {
     await network.provider.send("evm_mine"); //Mine to let the increase time take effect on getBlock('latest')
     now = (await ethers.provider.getBlock("latest")).timestamp;
 
-    expect(now.toString()).to.be.equal(
-      reservedUntil.toString(),
+    expect(now).to.be.within(
+      reservedUntil - 1,
+      reservedUntil + 1,
       "should have moved on to reservedUntil now"
     );
 
@@ -1893,8 +1896,9 @@ describe("Reserving", async () => {
     await network.provider.send("evm_mine"); //Mine to let the increase time take effect on getBlock('latest')
     now = (await ethers.provider.getBlock("latest")).timestamp;
 
-    expect(now.toString()).to.be.equal(
-      reservedUntil.toString(),
+    expect(now).to.be.within(
+      reservedUntil - 1,
+      reservedUntil + 1,
       "should have moved on to reservedUntil now"
     );
 
@@ -2006,8 +2010,9 @@ describe("Reserving", async () => {
     await network.provider.send("evm_mine"); //Mine to let the increase time take effect on getBlock('latest')
     now = (await ethers.provider.getBlock("latest")).timestamp;
 
-    expect(now.toString()).to.be.equal(
-      reservedUntil.toString(),
+    expect(now).to.be.within(
+      reservedUntil - 1,
+      reservedUntil + 1,
       "should have moved on to reservedUntil now"
     );
 
@@ -2118,8 +2123,9 @@ describe("Reserving", async () => {
     await network.provider.send("evm_mine"); //Mine to let the increase time take effect on getBlock('latest')
     now = (await ethers.provider.getBlock("latest")).timestamp;
 
-    expect(now.toString()).to.be.equal(
-      reservedUntil.toString(),
+    expect(now).to.be.within(
+      reservedUntil - 1,
+      reservedUntil + 1,
       "should have moved on to reservedUntil now"
     );
 
