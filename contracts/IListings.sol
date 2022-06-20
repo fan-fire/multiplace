@@ -2,7 +2,7 @@
 pragma solidity 0.8.5;
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-interface IListings is IERC165 {
+interface IListings {
     enum NFT_TYPE {
         ERC721,
         ERC721_2981,

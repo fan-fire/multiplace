@@ -282,27 +282,36 @@ describe("Admin", async (accounts) => {
     expect(adminSupports165).to.be.true;
   });
 
-  it.skip("Admin supports correct IAdmin", async () => {
+  it("Can't add the same payment token twice", async () => {
+    let dummyPaymentTokenAddress = notOwner.address;
     multiplace = await getMultiplace();
-    let adminAddr = await multiplace.admin();
-    const Admin = await ethers.getContractFactory("Admin");
-    let admin = await Admin.attach(adminAddr);
-    // const IAdmin = await ethers.getContractFactory("IAdmin");
+    await multiplace.connect(owner).addPaymentToken(dummyPaymentTokenAddress);
 
-    const IERC165 = await ethers.getContractFactory(
-      require("../artifacts/@openzeppelin/contracts/utils/introspection/ERC165.sol/ERC165.json")
-        .abi
+    let isPaymentToken = await multiplace.isPaymentToken(
+      dummyPaymentTokenAddress
     );
+    expect(isPaymentToken).to.be.true;
 
-    let interfaceId165 = getInterfaceID(IERC165.interface);
-    console.log(`interfaceId165: ${interfaceId165}`);
-    let interfaceId = getInterfaceID(admin.interface);
-    console.log(`interfaceId: ${interfaceId}`);
+    await expect(
+      multiplace.connect(owner).addPaymentToken(dummyPaymentTokenAddress)
+    ).to.be.revertedWith("Payment token already added");
   });
 
-  it.skip("Can't change protocol wallet to ZERO_ADDRESS", async () => {});
+  it("Can't get balance for unkown payment token", async () => {
+    let dummyPaymentTokenAddress = notOwner.address;
+    multiplace = await getMultiplace();
+    let isPaymentToken = await multiplace.isPaymentToken(
+      dummyPaymentTokenAddress
+    );
 
-  it.skip("ProtocolWalletChanged event emitted", async () => {});
-  it.skip("ProtocolFeeChanged event emitted", async () => {});
-  it.skip("PaymentTokenAdded event emitted", async () => {});
+    expect(isPaymentToken).to.be.false;
+
+    await expect(
+      multiplace
+        .connect(owner)
+        .getBalance(dummyPaymentTokenAddress, owner.address)
+    ).to.be.revertedWith("Unkown payment token");
+  });
+
+  xit("Can't change protocol wallet to ZERO_ADDRESS", async () => {});
 });

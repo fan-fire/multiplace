@@ -900,6 +900,4 @@ describe("Protocol Fees", async () => {
       multiplace.connect(owner).changeProtocolFee(newNumerator, newDenominator)
     ).to.be.revertedWith("denominator cannot be 0");
   });
-  xit("event is emitted when the protocol wallet is updated", async () => {});
-  xit("event is emitted when the protocol fee changed", async () => {});
 });

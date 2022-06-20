@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.5;
-
-import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "./IListings.sol";
 
-interface IMultiplace is IERC165 {
+interface IMultiplace {
     event Listed(
         uint256 listPtr,
         address indexed tokenAddr,

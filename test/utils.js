@@ -37,6 +37,18 @@ const NFT_TYPE = {
   ERC1155_2981: 3,
 };
 
+const getInterfaceID = (contractInterface) => {
+  let interfaceID = ethers.constants.Zero;
+  const functions = Object.keys(contractInterface.functions);
+  for (let i = 0; i < functions.length; i++) {
+    let f = functions[i];
+    let hash = contractInterface.getSighash(f);
+    interfaceID = interfaceID.xor(hash);
+  }
+
+  return interfaceID.toHexString();
+};
+
 module.exports = {
   NFT_TYPE,
   listingToObject,
@@ -45,4 +57,5 @@ module.exports = {
   RESERVER_ROLE,
   PROTOCOL_FEE_DEN,
   PROTOCOL_FEE_NUM,
+  getInterfaceID,
 };

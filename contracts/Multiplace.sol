@@ -459,18 +459,6 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         return (listings.status(seller, tokenAddr, tokenId));
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(IERC165, AccessControl)
-        returns (bool)
-    {
-        return
-            interfaceId == type(IMultiplace).interfaceId ||
-            interfaceId == type(IAccessControl).interfaceId ||
-            interfaceId == type(IERC165).interfaceId;
-    }
-
     function protocolFeeNumerator() public view override returns (uint256) {
         return admin.protocolFeeNumerator();
     }
