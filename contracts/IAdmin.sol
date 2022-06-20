@@ -2,7 +2,7 @@
 pragma solidity 0.8.5;
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-interface IAdmin is IERC165 {
+interface IAdmin {
     function owner() external view returns (address);
 
     function changeProtocolWallet(address newProtocolWallet) external;

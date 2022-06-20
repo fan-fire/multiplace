@@ -7,12 +7,13 @@ import "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/IAccessControl.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./IListings.sol";
 import "./IMultiplace.sol";
 import "./IAdmin.sol";
 import "./Storage.sol";
 
-contract Multiplace is IMultiplace, Storage, Pausable {
+contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
@@ -246,6 +247,7 @@ contract Multiplace is IMultiplace, Storage, Pausable {
         external
         override
         whenNotPaused
+        nonReentrant
     {
         // Checks
         require(

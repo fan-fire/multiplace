@@ -270,18 +270,6 @@ describe("Admin", async (accounts) => {
     ).to.be.revertedWith("Not owner contract");
   });
 
-  it("Admin supports 165", async () => {
-    multiplace = await getMultiplace();
-    let adminAddr = await multiplace.admin();
-    const Admin = await ethers.getContractFactory("Admin");
-    let admin = await Admin.attach(adminAddr);
-
-    let interfaceId165 = "0x01ffc9a7";
-
-    let adminSupports165 = await admin.supportsInterface(interfaceId165);
-    expect(adminSupports165).to.be.true;
-  });
-
   it("Can't add the same payment token twice", async () => {
     let dummyPaymentTokenAddress = notOwner.address;
     multiplace = await getMultiplace();

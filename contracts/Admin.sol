@@ -70,15 +70,4 @@ contract Admin is IAdmin {
     function protocolFeeDenominator() public view override returns (uint256) {
         return _protocolFeeDenominator;
     }
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        pure
-        override
-        returns (bool)
-    {
-        return
-            interfaceId == type(IAdmin).interfaceId ||
-            interfaceId == type(IERC165).interfaceId;
-    }
 }
