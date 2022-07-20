@@ -28,6 +28,11 @@ module.exports = {
   //   optimizer: { enabled: true, runs: 200 },
   // },
   networks: {
+    hardhat: {
+      gasPrice: 1 * 1 ** 1,
+      baseFeePerGas: 1 * 1 ** 1,
+      initialBaseFeePerGas: 1 * 1 ** 1,
+    },
     polygon: {
       accounts: {
         mnemonic: process.env.MNEMONIC,
