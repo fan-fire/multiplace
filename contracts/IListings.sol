@@ -29,6 +29,11 @@ interface IListings {
         address reservedFor; //Address of the buyer who reserved the listing
     }
 
+    struct Seller {
+        address seller; //Address of the seller
+        uint256 sellerPtr; //Pointer to where this seller is located in the sellers array
+    }
+
     function list(
         address lister,
         address tokenAddr,
