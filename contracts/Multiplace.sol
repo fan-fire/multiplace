@@ -157,7 +157,7 @@ contract Multiplace is IMultiplace, Storage, Pausable, ReentrancyGuard {
                 msg.sender,
                 tokenId,
                 amount,
-                ""
+                "0x"
             );
         }
 
