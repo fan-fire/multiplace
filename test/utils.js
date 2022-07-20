@@ -13,10 +13,10 @@ const randomSigners = (amount) => {
     let wallet = ethers.Wallet.createRandom().connect(ethers.provider);
     signers.push(wallet);
 
-    // send max eth to all new wallets
+    // fund with 10000 ether (0x021e19e0c9bab2400000)
     provider.send("hardhat_setBalance", [
       wallet.address,
-      "0x6C6F444B4825B13900",
+      "0x021e19e0c9bab2400000",
     ]);
   }
 
