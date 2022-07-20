@@ -205,7 +205,7 @@ describe("Seller update bug plug - duplicated failed state", async () => {
   });
 });
 
-describe("Variations", async () => {
+describe.only("Variations", async () => {
   let owner;
   let seller1;
   let seller2;

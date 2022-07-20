@@ -16,7 +16,7 @@ const randomSigners = (amount) => {
     // send max eth to all new wallets
     provider.send("hardhat_setBalance", [
       wallet.address,
-      "0x596829CAF5A3953800",
+      "0x6C6F444B4825B13900",
     ]);
   }
 
