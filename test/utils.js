@@ -6,6 +6,14 @@ Array.prototype.forEachAsync = async function (fn) {
   }
 };
 
+const randomSigners = (amount) => {
+  const signers = [];
+  for (let i = 0; i < amount; i++) {
+    signers.push(ethers.Wallet.createRandom().connect(ethers.provider));
+  }
+  return signers;
+};
+
 const listingToObject = (listing) => {
   return {
     listPtr: listing.listPtr.toNumber(),
@@ -58,4 +66,5 @@ module.exports = {
   PROTOCOL_FEE_DEN,
   PROTOCOL_FEE_NUM,
   getInterfaceID,
+  randomSigners,
 };
