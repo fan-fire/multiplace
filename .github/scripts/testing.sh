@@ -12,7 +12,7 @@ else
 fi
 
 echo "Running npx hardhat coverage"
-npx hardhat coverage >>test_output.log
+npx hardhat coverage --network hardhat>>test_output.log
 sed -i '1s/^/```\n/' test_output.log
 echo '```' >>test_output.log
 echo "Test output"

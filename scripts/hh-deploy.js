@@ -1,6 +1,12 @@
 const hre = require("hardhat");
-const { NETWORKS, PAYMENT_TOKENS, STANIE, FANIE, RESERVER_ROLE, sleep } =
-  require("./utils.js");
+const {
+  NETWORKS,
+  PAYMENT_TOKENS,
+  STANIE,
+  FANIE,
+  RESERVER_ROLE,
+  sleep,
+} = require("./utils.js");
 
 async function main() {
   let [owner] = await hre.ethers.getSigners();

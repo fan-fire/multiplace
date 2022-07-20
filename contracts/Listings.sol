@@ -10,7 +10,7 @@ import "./IListings.sol";
 contract Listings is IListings {
     using ERC165Checker for address;
 
-    uint256 public constant MAX_RESERVE_PERIOD = 24 * 60 * 60; /// can only reserve for a max of 1 day
+    uint256 public constant MAX_RESERVE_PERIOD = 365 * 60 * 60; /// can only reserve for a max of 1 year
     address public owner;
     uint256 public numListings; //Number of listings in the marketplace
     Listing[] internal _listings; //Listings of the marketplace
@@ -21,9 +21,10 @@ contract Listings is IListings {
         internal _token2Ptr; //Mapping from lister.tokenAddr.tokenId -> listPtr to quickly lookup the listing given lister.tokenAddr.tokenId
     mapping(address => mapping(address => mapping(uint256 => Royalty)))
         internal _unitRoyalties; //Royalties of each lister.tokenAddr.tokenId pair
-    mapping(address => mapping(uint256 => address[])) internal _sellers; //Mapping from tokenAddr.tokenId -> array of addresses currently listing
+    mapping(address => mapping(uint256 => Seller[])) internal _sellers; //Mapping from tokenAddr.tokenId -> array of addresses currently listing
     mapping(address => mapping(uint256 => mapping(address => uint256)))
-        internal _sellersPtr; //Mapping from tokenAddr.tokenId.lister -> listersPtr to be able to pop a lister given the address
+        internal _sellersPtr; //mapping from tokenAddr.tokenId.seller -> _sellersPtr
+    mapping(address => mapping(uint256 => bool)) internal _hasSellers; //mapping from tokenAddr.tokenId -> hasSeller - used to invalidate a ptr=0
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this function");
@@ -54,10 +55,7 @@ contract Listings is IListings {
         _isListed[lister][tokenAddr][tokenId] = true;
 
         // update _sellers
-        _sellers[tokenAddr][tokenId].push(lister);
-        _sellersPtr[tokenAddr][tokenId][lister] =
-            _sellers[tokenAddr][tokenId].length -
-            1;
+        _addSeller(tokenAddr, lister, tokenId);
 
         // check that we've got a valid 721 or 1155, either with, or without 2981
         NFT_TYPE _nftType = getType(tokenAddr);
@@ -203,6 +201,7 @@ contract Listings is IListings {
         returns (bool)
     {
         uint256 listPtrToRemove = listingToRemove.listPtr;
+
         // pop from _listings,
         Listing memory lastListing = _listings[_listings.length - 1];
         lastListing.listPtr = listPtrToRemove;
@@ -215,16 +214,11 @@ contract Listings is IListings {
         ] = listPtrToRemove;
 
         // update _sellers
-        uint256 listerToRemoveIndx = _sellersPtr[listingToRemove.tokenAddr][
+        _removeSeller(
+            listingToRemove.tokenAddr,
+            listingToRemove.seller,
             listingToRemove.tokenId
-        ][listingToRemove.seller];
-        _sellers[listingToRemove.tokenAddr][listingToRemove.tokenId][
-            listerToRemoveIndx
-        ] = _sellers[listingToRemove.tokenAddr][listingToRemove.tokenId][
-            _sellers[listingToRemove.tokenAddr][listingToRemove.tokenId]
-                .length - 1
-        ];
-        _sellers[listingToRemove.tokenAddr][listingToRemove.tokenId].pop();
+        );
 
         // decrease numListings
         numListings = numListings - 1;
@@ -234,6 +228,47 @@ contract Listings is IListings {
         ] = false;
         assert(numListings >= 0);
         return true;
+    }
+
+    function _addSeller(
+        address tokenAddr,
+        address seller,
+        uint256 tokenId
+    ) internal {
+        _hasSellers[tokenAddr][tokenId] = true;
+        _sellers[tokenAddr][tokenId].push(
+            Seller(seller, _sellers[tokenAddr][tokenId].length)
+        );
+        _sellersPtr[tokenAddr][tokenId][seller] =
+            _sellers[tokenAddr][tokenId].length -
+            1;
+    }
+
+    function _removeSeller(
+        address tokenAddr,
+        address seller,
+        uint256 tokenId
+    ) internal {
+        require(_hasSellers[tokenAddr][tokenId], "No sellers for this token");
+
+        uint256 sellerPtr = _sellersPtr[tokenAddr][tokenId][seller];
+        uint256 lastSellerPtr = _sellers[tokenAddr][tokenId].length - 1;
+        if (sellerPtr != lastSellerPtr) {
+            _sellers[tokenAddr][tokenId][sellerPtr] = _sellers[tokenAddr][
+                tokenId
+            ][lastSellerPtr];
+            _sellers[tokenAddr][tokenId][sellerPtr].sellerPtr = sellerPtr;
+            _sellersPtr[tokenAddr][tokenId][
+                _sellers[tokenAddr][tokenId][sellerPtr].seller
+            ] = sellerPtr;
+        }
+
+        _sellers[tokenAddr][tokenId].pop();
+        _sellersPtr[tokenAddr][tokenId][seller] = 0;
+
+        if (_sellers[tokenAddr][tokenId].length == 0) {
+            _hasSellers[tokenAddr][tokenId] = false;
+        }
     }
 
     function updateRoyalties(
@@ -358,7 +393,13 @@ contract Listings is IListings {
         override
         returns (address[] memory sellers)
     {
-        return _sellers[tokenAddr][tokenId];
+        address[] memory sellersArray = new address[](
+            _sellers[tokenAddr][tokenId].length
+        );
+        for (uint256 i = 0; i < _sellers[tokenAddr][tokenId].length; i++) {
+            sellersArray[i] = _sellers[tokenAddr][tokenId][i].seller;
+        }
+        return sellersArray;
     }
 
     function getListingPointer(

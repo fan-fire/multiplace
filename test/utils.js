@@ -6,6 +6,23 @@ Array.prototype.forEachAsync = async function (fn) {
   }
 };
 
+const randomSigners = (amount) => {
+  let provider = ethers.provider;
+  const signers = [];
+  for (let i = 0; i < amount; i++) {
+    let wallet = ethers.Wallet.createRandom().connect(ethers.provider);
+    signers.push(wallet);
+
+    // send aroun 2000 eth to all new wallets
+    provider.send("hardhat_setBalance", [
+      wallet.address,
+      "0x6C6F444B4825B13900",
+    ]);
+  }
+
+  return signers;
+};
+
 const listingToObject = (listing) => {
   return {
     listPtr: listing.listPtr.toNumber(),
@@ -58,4 +75,5 @@ module.exports = {
   PROTOCOL_FEE_DEN,
   PROTOCOL_FEE_NUM,
   getInterfaceID,
+  randomSigners,
 };

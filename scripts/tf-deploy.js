@@ -33,13 +33,12 @@ const main = async () => {
 };
 
 module.exports = async (callback) => {
-  try{
+  try {
     await main();
-  }catch(error){
+  } catch (error) {
     console.error(error);
     process.exitCode = 1;
   }
-
 
   callback();
 };

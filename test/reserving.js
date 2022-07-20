@@ -2257,8 +2257,8 @@ describe("Reserving", async () => {
     let MAX_RESERVE_PERIOD = await listings.MAX_RESERVE_PERIOD();
 
     expect(MAX_RESERVE_PERIOD.toString()).to.be.equal(
-      `${24 * 60 * 60}`,
-      "MAX_RESERVE_PERIOD should be 1 day in secondns"
+      `${365 * 60 * 60}`,
+      "MAX_RESERVE_PERIOD should be 1 year in seconnds"
     );
 
     await multiplace.grantRole(RESERVER_ROLE, acc1.address);
