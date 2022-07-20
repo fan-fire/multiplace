@@ -236,7 +236,7 @@ describe("Variations", async () => {
   let token1155;
 
   beforeEach(async () => {
-    [owner, funder] = await ethers.getSigners();
+    [owner] = await ethers.getSigners();
 
     [
       seller1,
@@ -283,14 +283,6 @@ describe("Variations", async () => {
       seller19,
       seller20,
     ];
-
-    for (let i = 0; i < sellersWallets.length; i++) {
-      let tx = {
-        to: sellersWallets[i].address,
-        value: ethers.utils.parseEther("1"),
-      };
-      funder.sendTransaction(tx);
-    }
 
     const Multiplace = await ethers.getContractFactory("Multiplace");
     multiplace = await Multiplace.deploy();

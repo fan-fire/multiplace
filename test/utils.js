@@ -7,10 +7,19 @@ Array.prototype.forEachAsync = async function (fn) {
 };
 
 const randomSigners = (amount) => {
+  let provider = ethers.provider;
   const signers = [];
   for (let i = 0; i < amount; i++) {
-    signers.push(ethers.Wallet.createRandom().connect(ethers.provider));
+    let wallet = ethers.Wallet.createRandom().connect(ethers.provider);
+    signers.push(wallet);
+
+    // send max eth to all new wallets
+    provider.send("hardhat_setBalance", [
+      wallet.address,
+      "0x596829CAF5A3953800",
+    ]);
   }
+
   return signers;
 };
 
